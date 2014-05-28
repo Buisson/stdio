@@ -13,19 +13,15 @@
  * 
  */
 int main(int argc, char** argv) {
-    
+    //puts("bite");
     char c;
-    FILE* f;
-    f->_file=0;
-    f->_base="clavier";
-    f->_bufsiz=1;
+    FILE* f = malloc(sizeof(FILE)); //Fuck it.
     
+    _filbuf(f);
+    puts("bug?");
     
    
-    while(read(0,&c,1)){
-        _filbuf(f);
-	write(0,&c,1);
-    }
+    
     return 0;
 }
 
