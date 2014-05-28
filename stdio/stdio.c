@@ -10,6 +10,16 @@ extern int _filbuf(FILE * f){
 
 }
 
+/*
 extern int _flsbuf(unsigned char c, FILE *f){
     
+}*/
+
+FILE *fopen(const char *path, const char *mode){
+    FILE f;
+    f->_file = open(path, mode, 0777);
+    f->_flag=mode;
+    _filbuf(f);
+    
+    return f;
 }
