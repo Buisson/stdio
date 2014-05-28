@@ -9,3 +9,7 @@ extern int _filbuf(FILE * f){
 	return n?c:EOF;
 
 }
+
+extern int _flsbuf(unsigned char c, FILE *f){
+    
+}
