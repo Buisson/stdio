@@ -12,18 +12,21 @@ struct _iobuf _IOB[5000];
 
 void init() {
     (&_IOB[0])->_file = 0;
+    (&_IOB[0])->_flag = _IOMYBUF | _IOREAD;
     _filbuf(&(_IOB[0]));
 
     (&_IOB[1])->_file = 1;
+    (&_IOB[1])->_flag = _IOMYBUF | _IOWRT;
     _filbuf(&(_IOB[1]));
 
     (&_IOB[2])->_file = 2;
+    (&_IOB[2])->_flag = _IOMYBUF | _IOWRT;
     _filbuf(&(_IOB[2]));
 }
 
 int _filbuf(FILE * f) {
 
-    f->_cnt = 0;
+    f->_cnt = BUFSIZ;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
         f->_bufsiz = BUFSIZ;
@@ -40,34 +43,29 @@ int _filbuf(FILE * f) {
 }
 
 FILE *fopen(const char *path, const char *mode) {
-    FILE* f = malloc(sizeof(FILE));
+    FILE* f = malloc(sizeof (FILE));
     f->_file = creat(path, mode);
-    
-    if(strcmp(mode,"r")){
-        f->_flag=_IOREAD;
+
+    if (strcmp(mode, "r")) {
+        f->_flag = _IOREAD;
+    } else if (strcmp(mode, "r+")) {
+        f->_flag = (_IORW);
+    } else if (strcmp(mode, "w")) {
+        f->_flag = (_IOWRT);
+    } else if (strcmp(mode, "w+")) {
+        f->_flag = (_IORW);
+    } else if (strcmp(mode, "a")) {
+        f->_flag = (_IOWRT | _IOEOF);
+    } else if (strcmp(mode, "a+")) {
+        f->_flag = (_IORW | _IOEOF);
+    } else {
+        f->_flag = (_IOERR);
     }
-    else if(strcmp(mode,"r+")){
-        f->_flag=(_IORW);
-    }
-    else if(strcmp(mode,"w")){
-        f->_flag=(_IOWRT);
-    }
-    else if(strcmp(mode,"w+")){
-        f->_flag=(_IORW);
-    }
-    else if(strcmp(mode,"a")){
-        f->_flag=(_IOWRT|_IOEOF);
-   }
-    else if(strcmp(mode,"a+")){
-        f->_flag=(_IORW|_IOEOF);
-    }else{
-        f->_flag=(_IOERR);
-    }
-    
+
     _filbuf(f);
-    if(!(f->_flag & _IOERR)){
+    if (!(f->_flag & _IOERR)) {
         return f;
-    }else{
+    } else {
         return NULL;
     }
 }
@@ -218,7 +216,6 @@ int sprintf(char *str, const char *format, ...) {
 }
 
 int fputc(int c, FILE *stream) {
-    tracer(stream);
     if (&(stream->_file) == NULL) {
         fputs("file descriptor is closed, die.\n", stderr);
         exit(-1);
@@ -244,6 +241,7 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
 
+    write(2, s, strlen(s));
     for (int i = 0; i < strlen(s); i++) {
         fputc(s[i], stream);
     }
@@ -308,7 +306,7 @@ int fflush(FILE *stream) {
 
             if ((&_IOB[i])->_flag & _IOMYBUF) {
                 free((&_IOB[i])->_base);
-                free((&_IOB[i])->_ptr);
+                //     free((&_IOB[i])->_ptr);
             }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
@@ -322,7 +320,7 @@ int fflush(FILE *stream) {
         }
         if (stream->_flag & _IOMYBUF) {
             free(stream->_base);
-            free(stream->_ptr);
+            // free(stream->_ptr);
         }
         stream->_ptr = NULL;
         stream->_base = NULL;
@@ -330,37 +328,36 @@ int fflush(FILE *stream) {
 
         return 0;
     }
-    
-    FILE *fdopen(int fd, const char *mode){
-        if(&_IOB[fd]!=NULL){
-            FILE* f=&_IOB[fd];
-            return fopen(f,mode); //voir si sa plante ...
-        }
-        else{
+
+    FILE * fdopen(int fd, const char *mode) {
+        if (&_IOB[fd] != NULL) {
+            FILE* f = &_IOB[fd];
+            return fopen(f, mode); //voir si sa plante ...
+        } else {
             return NULL;
         }
-        
+
     }
-    
-    FILE *freopen(const char *path, const char *mode, FILE *stream){
-        FILE* ret = fopen(path,mode);
-        ret->_file=stream;
+
+    FILE * freopen(const char *path, const char *mode, FILE * stream) {
+        FILE* ret = fopen(path, mode);
+        ret->_file = stream;
         return ret;
     }
-    
-    int fgetc(FILE *stream){
-        
+
+    int fgetc(FILE * stream) {
+
     }
-    
-    FILE *popen(const char *command, const char *type);
 
-    int pclose(FILE *stream);
+    FILE * popen(const char *command, const char *type);
 
-    FILE *tmpfile(void);
+    int pclose(FILE * stream);
 
-    
+    FILE * tmpfile(void);
 
-    char *fgets(char *s, int size, FILE *stream);
+
+
+    char *fgets(char *s, int size, FILE * stream);
 
     char *gets(char *s);
 

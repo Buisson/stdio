@@ -25,16 +25,17 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
-    FILE* f = fopen("toto.txt", "w+");
+    //FILE* f = fopen("toto.txt", "w+");
+    //tracer(f);
+    //fputs("cannot write on read-only file, die.\n", stderr);
 
-    //char* character[2];
+
     char sentence [256];
     sentence[0] = 'C';
     sentence[1] = 'C';
     sentence[2] = '\0';
     fputs(sentence, stdout);
-    fflush(f);
-
+    fflush(stdout);
 
     // printf("bite %s \n", "coucou");
     // fflush(stdout);
