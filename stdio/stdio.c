@@ -11,13 +11,13 @@
 struct _iobuf _IOB[5000];
 
 void init() {
-    (&_IOB[0])->_file = dup(0);
+    (&_IOB[0])->_file = 0;
     _filbuf(&(_IOB[0]));
 
-    (&_IOB[1])->_file = dup(1);
-    _filbuf(&(_IOB[0]));
+    (&_IOB[1])->_file = 1;
+    _filbuf(&(_IOB[1]));
 
-    (&_IOB[2])->_file = dup(2);
+    (&_IOB[2])->_file = 2;
     _filbuf(&(_IOB[2]));
 }
 
@@ -199,7 +199,8 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
     //TODO
-//    strcat(stream->_ptr, s);
+    tracer(stream);
+    strcat(stream->_ptr, s);
     return strlen(s);
 }
 
