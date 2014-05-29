@@ -26,7 +26,7 @@ void init() {
 
 int _filbuf(FILE * f) {
 
-    f->_cnt = 0;
+    f->_cnt = BUFSIZ;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
         f->_bufsiz = BUFSIZ;
