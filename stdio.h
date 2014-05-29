@@ -12,16 +12,17 @@
 /**** Ce qui suit est le fichier standard stdio.h de Sun OS 4.x
       (legerement modifie) ****/
 
-# ifndef FILE
+#ifndef FILE
 #define	BUFSIZ	1024
 #define _SBFSIZ	8
-extern	struct	_iobuf {
-	int		_cnt;
-	unsigned char*  _ptr;
-	unsigned char*  _base;
-	int		_bufsiz;
-	short		_flag;
-	char		_file;
+
+extern struct _iobuf {
+    int _cnt;
+    unsigned char* _ptr;
+    unsigned char* _base;
+    int _bufsiz;
+    short _flag;
+    char _file;
 } _IOB[];
 
 #define _IOFBF	 0
@@ -71,6 +72,7 @@ FILE *fopen(const char *path, const char *mode);
 FILE *fdopen(int fd, const char *mode);
 FILE *freopen(const char *path, const char *mode, FILE *stream);
 int fclose(FILE *fp);
+int fflush(FILE *stream);
 
 FILE *popen(const char *command, const char *type);
 int pclose(FILE *stream);
@@ -91,4 +93,4 @@ int sprintf(char *str, const char *format, ...);
 
 void setbuf(FILE *stream, char *buf);
 int setvbuf(FILE *stream, char *buf, int mode, int size);
-# endif
+#endif

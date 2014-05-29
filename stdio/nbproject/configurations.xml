@@ -37,6 +37,15 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
+        <cTool>
+          <standard>3</standard>
+          <warningLevel>2</warningLevel>
+        </cTool>
+        <linkerTool>
+          <linkerAddLib>
+            <pElem>.</pElem>
+          </linkerAddLib>
+        </linkerTool>
       </compileType>
       <item path="../stdio.h" ex="false" tool="3" flavor2="0">
       </item>
