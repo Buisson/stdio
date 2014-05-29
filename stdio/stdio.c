@@ -70,10 +70,34 @@ int _flsbuf(unsigned char c, FILE *f) {
 FILE *fopen(const char *path, const char *mode) {
     FILE* f;
     f->_file = creat(path, mode);
-    // f->_flag=mode;
+    
+    if(strcmp(mode,"r")){
+        f->_flag=_IOREAD;
+    }
+    else if(strcmp(mode,"r+")){
+        f->_flag=(_IORW);
+    }
+    else if(strcmp(mode,"w")){
+        f->_flag=(_IOWRT);
+    }
+    else if(strcmp(mode,"w+")){
+        f->_flag=(_IORW);
+    }
+    else if(strcmp(mode,"a")){
+        f->_flag=(_IOWRT|_IOEOF);
+   }
+    else if(strcmp(mode,"a+")){
+        f->_flag=(_IORW|_IOEOF);
+    }else{
+        f->_flag=(_IOERR);
+    }
+    
     _filbuf(f);
-
-    return f;
+    if(!(f->_flag & _IOERR)){
+        return f;
+    }else{
+        return NULL;
+    }
 }
 
 void setbuf(FILE *stream, char *buf) {
@@ -269,4 +293,38 @@ int fflush(FILE *stream) {
         _filbuf(stream);
         return 0;
     }
+    
+    FILE *fdopen(int fd, const char *mode){
+        if(&_IOB[fd]!=NULL){
+            FILE* f=&_IOB[fd];
+            return fopen(f,mode); //voir si sa plante ...
+        }
+        else{
+            return NULL;
+        }
+        
+    }
+    
+    FILE *freopen(const char *path, const char *mode, FILE *stream){
+        FILE* ret = fopen(path,mode);
+        ret->_file=stream;
+        return ret;
+    }
+    
+    int fgetc(FILE *stream){
+        
+    }
+    
+    FILE *popen(const char *command, const char *type);
+
+    int pclose(FILE *stream);
+
+    FILE *tmpfile(void);
+
+    
+
+    char *fgets(char *s, int size, FILE *stream);
+
+    char *gets(char *s);
+
 }
