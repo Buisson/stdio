@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include <bits/fcntl.h>
 
 struct _iobuf _IOB[5000];
 
@@ -45,22 +44,22 @@ int _filbuf(FILE * f) {
 FILE *fopen(const char *path, const char *mode) {
     FILE* f = malloc(sizeof (FILE));
 
-    if (strcmp(mode, "r")) {
+    if (!strcmp(mode, "r")) {
         f->_flag = _IOREAD;
         f->_file = open(path, O_RDONLY);
-    } else if (strcmp(mode, "r+")) {
+    } else if (!strcmp(mode, "r+")) {
         f->_flag = (_IORW);
         f->_file = open(path, O_RDWR);
-    } else if (strcmp(mode, "w")) {
+    } else if (!strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
         f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT);
-    } else if (strcmp(mode, "w+")) {
+    } else if (!strcmp(mode, "w+")) {
         f->_flag = (_IORW);
         f->_file = open(path, O_RDWR | O_CREAT);
-    } else if (strcmp(mode, "a")) {
+    } else if (!strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
         f->_file = open(path, O_APPEND | O_WRONLY);
-    } else if (strcmp(mode, "a+")) {
+    } else if (!strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
         f->_file = open(path, O_APPEND | O_RDWR);
     } else {
