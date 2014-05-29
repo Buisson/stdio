@@ -221,6 +221,7 @@ int fflush(FILE *stream) {
             }
             if ((&_IOB[i])->_flag | _IOMYBUF) {
                 free((&_IOB[i])->_base);
+                free((&_IOB[i])->_ptr);
             }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
@@ -229,6 +230,10 @@ int fflush(FILE *stream) {
     } else {
         if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
             return -1;
+        }
+        if (stream->_flag | _IOMYBUF) {
+            free(stream->_base);
+            free(stream->_ptr);
         }
         stream->_ptr = NULL;
         stream->_base = NULL;
