@@ -25,7 +25,7 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
-    FILE* f = fopen("toto.txt", "w");
+    FILE* f = fopen("toto.txt", "w+");
     tracer(f);
     //fputs("cannot write on read-only file, die.\n", stderr);
 

@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <bits/fcntl.h>
 
 struct _iobuf _IOB[5000];
 
@@ -26,13 +27,12 @@ void init() {
 
 int _filbuf(FILE * f) {
 
-    f->_cnt = BUFSIZ;
+    f->_cnt = 0;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
         f->_bufsiz = BUFSIZ;
         f->_base = malloc(sizeof (char)*f->_bufsiz);
         f->_ptr = f->_base;
-
         return 1;
     } else {
         f->_ptr = f->_base;
@@ -44,22 +44,29 @@ int _filbuf(FILE * f) {
 
 FILE *fopen(const char *path, const char *mode) {
     FILE* f = malloc(sizeof (FILE));
-    f->_file = creat(path, mode);
+    //f->_file = creat(path, mode);
 
     if (strcmp(mode, "r")) {
         f->_flag = _IOREAD;
+        f->_file = open(path, O_RDONLY);
     } else if (strcmp(mode, "r+")) {
         f->_flag = (_IORW);
+        f->_file = open(path, O_RDWR);
     } else if (strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
+        f->_file = open(path, O_WRONLY|O_TRUNC|O_CREAT);
     } else if (strcmp(mode, "w+")) {
         f->_flag = (_IORW);
+        f->_file = open(path, O_RDWR|O_CREAT);
     } else if (strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
+        f->_file = open(path, O_APPEND|O_WRONLY);
     } else if (strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
+        f->_file = open(path, O_APPEND|O_RDWR);
     } else {
         f->_flag = (_IOERR);
+        write(2, "Bad mode, die.\n", strlen("Bad mode, die.\n"));
     }
 
     _filbuf(f);
