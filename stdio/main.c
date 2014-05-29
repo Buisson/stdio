@@ -25,6 +25,11 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
+    FILE* f = fopen("toto.txt", "w+");
+    fputs("bite\n", f);
+    fflush(f);
+
+
     // printf("bite %s \n", "coucou");
     // fflush(stdout);
     //execlp("cat", "cat");
