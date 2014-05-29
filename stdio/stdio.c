@@ -22,47 +22,20 @@ void init() {
 }
 
 int _filbuf(FILE * f) {
-    int n, c;
-    char char_read = EOF;
+    
+    f->_cnt=0;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        f->_bufsiz = BUFSIZ; //Pourquoi enlever ça ?
+        f->_bufsiz = BUFSIZ; 
         f->_base = malloc(sizeof (char)*f->_bufsiz);
         f->_ptr = f->_base;
-    } else if (((int) f->_cnt) > 0) {
-        /*
-         * il reste des caracteres a lire dans le buffer
-         * donc on retourne ce caractere.
-         */
-        --f->_cnt;
-        char_read = *f->_ptr++;
-        return char_read;
+        
+        return 1;
+    } else{
+        f->_ptr = f->_base;
+        return 0;
     }
 
-    /*
-     * Remplis le buffer avec les 1024(ou taille du buffer) prochain caractere du fichier.
-     */
-    if (f->_bufsiz) {
-        if (f->_flag == _IOREAD | _IORW) {
-            f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
-        }
-    } else { //Si la taille du buffer est mauvaise (par exemple une valeur negative).
-        f->_cnt = 0;
-    }
-
-    //Verif du f->cnt :
-    if (f->_cnt < 0) { /* valeur negative -> erreur. */
-        f->_flag |= _IOERR;
-    } else if (f->_cnt == 0) { /* 0 indique un EOF */
-        f->_flag |= _IOEOF;
-    } else { /* sinon une bonne donnée a été lu. */
-        f->_flag &= _IOEOF;
-        f->_cnt--;
-        char_read = *f->_ptr++;
-    }
-
-
-    return char_read;
 
 }
 
