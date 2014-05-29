@@ -26,14 +26,33 @@ void tracer(FILE *f) {
 int main(int argc, char** argv) {
     init();
 <<<<<<< HEAD
-    printf("bite %s \n", "coucou");
-    fflush(stdout);
+<<<<<<< HEAD
+    FILE* f = fopen("toto.txt", "w");
 =======
-    puts("coucou");
-    execlp("cat","cat");
->>>>>>> 32be65c36a378d35bdfec448ae033426812f80a2
+    FILE* f = fopen("toto.txt", "w+");
+=======
+    FILE* f = fopen("toto.txt", "w");
+>>>>>>> 89eeac096d4091b6112ebac461d95636f5b67b2a
+    tracer(f);
+>>>>>>> 4d3b317bc8afa4db6c27e64fc0b6f185aca6342f
+    //fputs("cannot write on read-only file, die.\n", stderr);
+
+
+    char sentence [256];
+    sentence[0] = 'C';
+    sentence[1] = 'C';
+    sentence[2] = '\0';
+    tracer(f);
+
+    fputs(sentence, f);
+    fflush(f);
+    fclose(f);
+
+    // printf("bite %s \n", "coucou");
+    // fflush(stdout);
+    //execlp("cat", "cat");
     //char c;
-    //FILE* f = malloc(sizeof (FILE));
+    //FILE* f = malloc(sizeof (FILE)); //Fuck it.
     //puts("coucou");
     //_filbuf(f);
     //puts("bug?");

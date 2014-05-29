@@ -44,7 +44,6 @@ int _filbuf(FILE * f) {
 
 FILE *fopen(const char *path, const char *mode) {
     FILE* f = malloc(sizeof (FILE));
-    //f->_file = creat(path, mode);
 
     if (strcmp(mode, "r")) {
         f->_flag = _IOREAD;
@@ -54,16 +53,16 @@ FILE *fopen(const char *path, const char *mode) {
         f->_file = open(path, O_RDWR);
     } else if (strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
-        f->_file = open(path, O_WRONLY|O_TRUNC|O_CREAT);
+        f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT);
     } else if (strcmp(mode, "w+")) {
         f->_flag = (_IORW);
-        f->_file = open(path, O_RDWR|O_CREAT);
+        f->_file = open(path, O_RDWR | O_CREAT);
     } else if (strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
-        f->_file = open(path, O_APPEND|O_WRONLY);
+        f->_file = open(path, O_APPEND | O_WRONLY);
     } else if (strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
-        f->_file = open(path, O_APPEND|O_RDWR);
+        f->_file = open(path, O_APPEND | O_RDWR);
     } else {
         f->_flag = (_IOERR);
         write(2, "Bad mode, die.\n", strlen("Bad mode, die.\n"));
@@ -315,7 +314,6 @@ int fflush(FILE *stream) {
 
             if ((&_IOB[i])->_flag & _IOMYBUF) {
                 free((&_IOB[i])->_base);
-                //     free((&_IOB[i])->_ptr);
             }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
@@ -329,7 +327,6 @@ int fflush(FILE *stream) {
         }
         if (stream->_flag & _IOMYBUF) {
             free(stream->_base);
-            // free(stream->_ptr);
         }
         stream->_ptr = NULL;
         stream->_base = NULL;
@@ -337,37 +334,28 @@ int fflush(FILE *stream) {
 
         return 0;
     }
+}
 
-    FILE * fdopen(int fd, const char *mode) {
-        if (&_IOB[fd] != NULL) {
-            FILE* f = &_IOB[fd];
-            return fopen(f, mode); //voir si sa plante ...
-        } else {
-            return NULL;
-        }
-
+FILE * fdopen(int fd, const char *mode) {
+    if (&_IOB[fd] != NULL) {
+        FILE* f = &_IOB[fd];
+        return fopen(f, mode); //voir si sa plante ...
+    } else {
+        return NULL;
     }
-
-    FILE * freopen(const char *path, const char *mode, FILE * stream) {
-        FILE* ret = fopen(path, mode);
-        ret->_file = stream;
-        return ret;
-    }
-
-    int fgetc(FILE * stream) {
-
-    }
-
-    FILE * popen(const char *command, const char *type);
-
-    int pclose(FILE * stream);
-
-    FILE * tmpfile(void);
-
-
-
-    char *fgets(char *s, int size, FILE * stream);
-
-    char *gets(char *s);
 
 }
+
+FILE * freopen(const char *path, const char *mode, FILE * stream) {
+    FILE* ret = fopen(path, mode);
+    ret->_file = stream;
+    return ret;
+}
+
+FILE * popen(const char *command, const char *type);
+
+int pclose(FILE * stream);
+
+FILE * tmpfile(void);
+
+
