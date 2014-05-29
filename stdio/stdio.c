@@ -220,6 +220,8 @@ int fputc(int c, FILE *stream) {
         write(2, "file descriptor is closed, die.\n", strlen("file descriptor is closed, die.\n"));
         exit(-1);
     }
+    tracer(stream);
+
     if (stream->_flag & _IOREAD) {
         write(2, "cannot write on read-only file, die.\n", strlen("cannot write on read-only file, die.\n"));
         exit(-1);
