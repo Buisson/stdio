@@ -25,7 +25,8 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
-    puts("coucou");
+    printf("bite %s \n", "coucou");
+    fflush(stdout);
     //char c;
     //FILE* f = malloc(sizeof (FILE)); //Fuck it.
     //puts("coucou");

@@ -26,9 +26,9 @@ int _filbuf(FILE * f) {
     char char_read = EOF;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        f->_bufsiz=BUFSIZ; //Pourquoi enlever ça ?
-        f->_base = malloc(sizeof(char)*f->_bufsiz);
-        f->_ptr=f->_base;
+        f->_bufsiz = BUFSIZ; //Pourquoi enlever ça ?
+        f->_base = malloc(sizeof (char)*f->_bufsiz);
+        f->_ptr = f->_base;
     } else if (((int) f->_cnt) > 0) {
         /*
          * il reste des caracteres a lire dans le buffer
@@ -43,7 +43,7 @@ int _filbuf(FILE * f) {
      * Remplis le buffer avec les 1024(ou taille du buffer) prochain caractere du fichier.
      */
     if (f->_bufsiz) {
-        if(f->_flag==_IOWRT){
+        if (f->_flag == _IOWRT) {
             f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
         }
     } else { //Si la taille du buffer est mauvaise (par exemple une valeur negative).
@@ -133,47 +133,92 @@ int fprintf(FILE *stream, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
-    for (argument = va_arg(ap, char*); argument != NULL; argument = va_arg(ap, char*)) {
-        sizeOfString += strlen(va_arg(ap, char*));
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+
+        char buffer[500];
+        snprintf(buffer, 500, "\nfprintf argument: %s\n\n", argument);
+        write(2, buffer, strlen(buffer));
+
+        sizeOfString += strlen(argument);
     }
     char str[(strlen(format) + sizeOfString)];
     sprintf(str, format, ap);
     va_end(ap);
+    write(2, str, strlen(str));
     return fputs(str, stream);
+}
+
+int count_arg(const char *str) {
+    regex_t regex;
+    int reti;
+    regmatch_t match[5000];
+
+    /* Compile regular expression */
+    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
+    if (reti) {
+        fprintf(stderr, "Could not compile regex\n");
+        exit(1);
+    }
+
+    /* Execute regular expression */
+    reti = regexec(&regex, str, 5000, match, 0);
+    if (!reti) {
+        write(2, "match", strlen("match"));
+    } else if (reti == REG_NOMATCH) {
+        write(2, "no match", strlen("no match"));
+    } else {
+        exit(-1);
+    }
+
+    /* Free compiled regular expression if you want to use the regex_t again */
+    regfree(&regex);
+    int i;
+    for (i = 0; match[i].rm_eo != -1; i++);
+
+
+    char buffer[500];
+    snprintf(buffer, 500, "\nnombre de match: %d\n\n", i);
+    write(2, buffer, strlen(buffer));
+
+    return i;
 }
 
 int sprintf(char *str, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
-    int nbArguments = 0;
+    int nbArguments = count_arg(format);
     int sizeOfString = strlen(format);
 
-    for (argument = va_arg(ap, char*); argument; argument = va_arg(ap, char*)) {
-        nbArguments++;
-        sizeOfString += strlen(va_arg(ap, char*));
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+        sizeOfString += strlen(argument);
+        write(2, argument, strlen(argument));
     }
-    va_end(ap);
 
+    va_end(ap);
     regmatch_t match[nbArguments];
     char tmp[strlen(format) + sizeOfString];
     strcpy(tmp, format);
-    str = "";
 
 
     regex_t regex;
     int reti;
 
     /* Compile regular expression */
-    reti = regcomp(&regex, "^%[[:alnum:]]", 0);
+    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
     if (reti) {
-        return 0;
+        fprintf(stderr, "Could not compile regex\n");
+        exit(1);
     }
 
     /* Execute regular expression */
-    reti = regexec(&regex, str, 0, match, 0);
-    if (!(!reti || reti == REG_NOMATCH)) {
-        return 0;
+    reti = regexec(&regex, tmp, nbArguments, match, 0);
+    if (!reti) {
+        write(2, "Match", 5);
+    } else if (reti == REG_NOMATCH) {
+        write(2, "No Match", 8);
     }
 
     /* Free compiled regular expression if you want to use the regex_t again */
@@ -182,8 +227,12 @@ int sprintf(char *str, const char *format, ...) {
     va_start(ap, format);
     int currentDecalageOffset = 0;
     int currentArgument = 0;
-    for (argument = va_arg(ap, char*); argument != NULL; argument = va_arg(ap, char*)) {
-        strncat(str, tmp, match[currentArgument].rm_eo - 1);
+
+
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+        strncat(str, tmp, match[currentArgument].rm_eo - 2);
+        write(2, argument, strlen(argument));
         strcat(str, argument);
         *tmp += (match[currentArgument].rm_so - currentDecalageOffset);
         currentDecalageOffset += match[currentArgument].rm_so;
@@ -204,6 +253,8 @@ int fputs(const char *s, FILE *stream) {
     //TODO
     tracer(stream);
     strcat(stream->_ptr, s);
+    write(2, stream->_ptr, strlen(stream->_ptr));
+    tracer(stream);
     return strlen(s);
 }
 
