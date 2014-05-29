@@ -8,7 +8,9 @@
 #include <fcntl.h>
 #include <string.h>
 
-extern int _filbuf(FILE * f) {
+struct _iobuf _IOB[5000];
+
+int _filbuf(FILE * f) {
     int n, c;
     char char_read = EOF;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
@@ -51,7 +53,7 @@ extern int _filbuf(FILE * f) {
 
 }
 
-extern int _flsbuf(unsigned char c, FILE *f) {
+int _flsbuf(unsigned char c, FILE *f) {
     int count;
     char tmp[1];
 

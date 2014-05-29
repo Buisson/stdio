@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <string.h>
 
-/*
 void tracer(FILE *f) {
     char buffer[500];
     snprintf(buffer, 500, "Trace FILE %p\n", f);
@@ -20,18 +19,17 @@ void tracer(FILE *f) {
             f->_cnt, f->_ptr, f->_base, f->_bufsiz, f->_flag, f->_file);
     write(2, buffer, strlen(buffer));
 }
- */
 
 /*
  *
  */
 int main(int argc, char** argv) {
 
-    char c;
-    FILE* f = malloc(sizeof (FILE)); //Fuck it.
+    //char c;
+    //FILE* f = malloc(sizeof (FILE)); //Fuck it.
 
-    _filbuf(f);
-    puts("bug?");
+    //_filbuf(f);
+    //puts("bug?");
 
 
 
