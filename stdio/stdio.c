@@ -40,7 +40,7 @@ int _filbuf(FILE * f) {
 }
 
 FILE *fopen(const char *path, const char *mode) {
-    FILE* f;
+    FILE* f = malloc(sizeof(FILE));
     f->_file = creat(path, mode);
     
     if(strcmp(mode,"r")){
