@@ -22,48 +22,20 @@ void init() {
 }
 
 int _filbuf(FILE * f) {
-    
-    f->_cnt=0;
+
+    f->_cnt = 0;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        f->_bufsiz = BUFSIZ; 
+        f->_bufsiz = BUFSIZ;
         f->_base = malloc(sizeof (char)*f->_bufsiz);
         f->_ptr = f->_base;
-        
+
         return 1;
-    } else{
+    } else {
         f->_ptr = f->_base;
         return 0;
     }
 
-
-}
-
-int _flsbuf(unsigned char c, FILE *f) {
-    int count;
-    char tmp[1];
-
-    if (f->_bufsiz <= 1) { // Si pas de buffer.
-        f->_cnt = 0;
-        tmp[0] = c;
-        return (int) c;
-    }
-
-    if (!(f->_base)) { //pas de buffer encore aloué. On en aloue un.
-        f->_ptr = f->_base = malloc(f->_bufsiz);
-        f->_cnt = f->_bufsiz;
-
-    }
-
-    if (f->_ptr == f->_base + f->_bufsiz) { //Si le buffer est plein
-        f->_ptr = f->_base;
-        f->_cnt = f->_bufsiz;
-    }
-
-    if (f->_flag & _IOWRT || f->_flag & _IORW) { //si le fichier a les droit en ecriture alors on peut copier le caracter dans le buffer.
-        *f->_ptr++ = c;
-        f->_cnt--;
-    }
 
 }
 
@@ -101,26 +73,8 @@ int printf(const char *format, ...) {
 
 }
 
-int fprintf(FILE *stream, const char *format, ...) {
-    int sizeOfString = strlen(format);
-    va_list ap;
-    va_start(ap, format);
-    char* argument;
-    for (int i = 0; i < count_arg(format); i++) {
-        argument = va_arg(ap, char*);
 
-        char buffer[500];
-        snprintf(buffer, 500, "\nfprintf argument: %s\n\n", argument);
-        write(2, buffer, strlen(buffer));
-
-        sizeOfString += strlen(argument);
-    }
-    char str[(strlen(format) + sizeOfString)];
-    sprintf(str, format, ap);
-    va_end(ap);
-    write(2, str, strlen(str));
-    return fputs(str, stream);
-}
+int count_arg(const char *str);
 
 int count_arg(const char *str) {
     regex_t regex;
@@ -155,6 +109,27 @@ int count_arg(const char *str) {
     write(2, buffer, strlen(buffer));
 
     return i;
+}
+
+int fprintf(FILE *stream, const char *format, ...) {
+    int sizeOfString = strlen(format);
+    va_list ap;
+    va_start(ap, format);
+    char* argument;
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+
+        char buffer[500];
+        snprintf(buffer, 500, "\nfprintf argument: %s\n\n", argument);
+        write(2, buffer, strlen(buffer));
+
+        sizeOfString += strlen(argument);
+    }
+    char str[(strlen(format) + sizeOfString)];
+    sprintf(str, format, ap);
+    va_end(ap);
+    write(2, str, strlen(str));
+    return fputs(str, stream);
 }
 
 int sprintf(char *str, const char *format, ...) {
@@ -219,22 +194,78 @@ int sprintf(char *str, const char *format, ...) {
 }
 
 int fputc(int c, FILE *stream) {
-    char character[1];
-    character[0] = c;
-    return fputs(character, stream);
+    tracer(stream);
+    if (&(stream->_file) == NULL) {
+        fputs("file descriptor is closed, die.\n", stderr);
+        exit(-1);
+    }
+    if (stream->_flag & _IOREAD) {
+        fputs("cannot write on read-only file, die.\n", stderr);
+        exit(-1);
+    }
+    if (stream->_cnt == 0) {
+        fflush(stream);
+        _filbuf(stream);
+    }
+    stream->_ptr[0] = c;
+    stream->_cnt--;
+    stream->_ptr++;
+    if ((stream->_flag & _IOLBF && c == '\n') || stream->_flag & _IONBF) {
+        fflush(stream);
+        _filbuf(stream);
+    }
+    tracer(stream);
+    return 1;
 }
 
 int fputs(const char *s, FILE *stream) {
-    //TODO
-    tracer(stream);
-    strcat(stream->_ptr, s);
-    write(2, stream->_ptr, strlen(stream->_ptr));
-    tracer(stream);
+
+    for (int i = 0; i < strlen(s); i++) {
+        fputc(s[i], stream);
+    }
     return strlen(s);
+
 }
 
 int puts(const char *s) {
     return fputs(s, stdout);
+}
+
+void filbuf(FILE *stream) {
+    stream->_cnt = read(stream->_file, stream->_base, BUFSIZ);
+    stream->_ptr = stream->_base;
+    if (stream->_cnt == -1) {
+        fputs("read file error, die.\n", stderr);
+        exit(-1);
+    }
+
+}
+
+int fgetc(FILE *stream) {
+    if (stream->_cnt == 0) {
+        filbuf(stream);
+    }
+    stream->_cnt--;
+    return (int) *(stream->_ptr++);
+}
+
+char *fgets(char *s, int size, FILE *stream) {
+    if (size < 0) {
+        fputs("size cannot be less than zero, die.\n", stderr);
+        exit(-1);
+    }
+    char character;
+    do {
+        character = (unsigned char) fgetc(stream);
+        if (character != EOF) {
+            s[strlen(s)] = character;
+        }
+    } while (character != '\n' && character != EOF && --size != 0);
+    return s;
+}
+
+char *gets(char *s) {
+    return fgets(s, 0, stdin);
 }
 
 int fclose(FILE *fp) {
@@ -245,9 +276,12 @@ int fclose(FILE *fp) {
 int fflush(FILE *stream) {
     if (stream == NULL) {
         for (int i = 0; &_IOB[i] != NULL; i++) {
-            if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
-                return -1;
+            if (stream->_flag & _IOWRT || stream->_flag & _IORW) {
+                if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
+                    return -1;
+                }
             }
+
             if ((&_IOB[i])->_flag & _IOMYBUF) {
                 free((&_IOB[i])->_base);
                 free((&_IOB[i])->_ptr);
@@ -257,8 +291,10 @@ int fflush(FILE *stream) {
             _filbuf(&_IOB[i]);
         }
     } else {
-        if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
-            return -1;
+        if (stream->_flag & _IOWRT || stream->_flag & _IORW) {
+            if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
+                return -1;
+            }
         }
         if (stream->_flag & _IOMYBUF) {
             free(stream->_base);
@@ -267,6 +303,7 @@ int fflush(FILE *stream) {
         stream->_ptr = NULL;
         stream->_base = NULL;
         _filbuf(stream);
+
         return 0;
     }
 }
