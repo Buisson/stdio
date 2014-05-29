@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     init();
     // printf("bite %s \n", "coucou");
     // fflush(stdout);
-    execlp("cat", "cat");
+    //execlp("cat", "cat");
     //char c;
     //FILE* f = malloc(sizeof (FILE)); //Fuck it.
     //puts("coucou");
