@@ -30,8 +30,9 @@ int main(int argc, char** argv) {
     //char* character[2];
     char sentence [256];
     sentence[0] = 'C';
-    sentence[1] = '\0';
-    fputs(sentence, stdin);
+    sentence[1] = 'C';
+    sentence[2] = '\0';
+    fputs(sentence, stdout);
     fflush(f);
 
 
