@@ -24,7 +24,6 @@ void tracer(FILE *f) {
  *
  */
 int main(int argc, char** argv) {
-
     init();
     //char c;
     //FILE* f = malloc(sizeof (FILE)); //Fuck it.

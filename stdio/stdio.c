@@ -13,6 +13,7 @@ struct _iobuf _IOB[5000];
 void init() {
     (&_IOB[0])->_file = dup(0);
     _filbuf(&(_IOB[0]));
+    _flsbuf(&_IOB->_ptr,&(_IOB[0]));
 }
 
 int _filbuf(FILE * f) {
@@ -21,13 +22,13 @@ int _filbuf(FILE * f) {
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
         //f->_bufsiz=BUFSIZ;
-        puts("dans le if");
         f->_base = malloc(f->_bufsiz);
     } else if (((int) f->_cnt) > 0) {
         /*
          * il reste des caracteres a lire dans le buffer
          * donc on retourne ce caractere.
          */
+        
         --f->_cnt;
         char_read = *f->_ptr++;
         return char_read;
