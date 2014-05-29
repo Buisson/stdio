@@ -217,11 +217,11 @@ int sprintf(char *str, const char *format, ...) {
 
 int fputc(int c, FILE *stream) {
     if (&(stream->_file) == NULL) {
-        fputs("file descriptor is closed, die.\n", stderr);
+        write(2, "file descriptor is closed, die.\n", strlen("file descriptor is closed, die.\n"));
         exit(-1);
     }
     if (stream->_flag & _IOREAD) {
-        fputs("cannot write on read-only file, die.\n", stderr);
+        write(2, "cannot write on read-only file, die.\n", strlen("cannot write on read-only file, die.\n"));
         exit(-1);
     }
     if (stream->_cnt == 0) {
