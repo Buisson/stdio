@@ -11,18 +11,14 @@
 struct _iobuf _IOB[5000];
 
 void init() {
-    (&_IOB[0])->_file = dup(0);
-    _filbuf(&(_IOB[0]));
-<<<<<<< HEAD
-    _flsbuf(&_IOB->_ptr,&(_IOB[0]));
-=======
-
-    (&_IOB[1])->_file = dup(1);
+    (&_IOB[0])->_file = 0;
     _filbuf(&(_IOB[0]));
 
-    (&_IOB[2])->_file = dup(2);
+    (&_IOB[1])->_file = 1;
+    _filbuf(&(_IOB[1]));
+
+    (&_IOB[2])->_file = 2;
     _filbuf(&(_IOB[2]));
->>>>>>> 05ab66cc07ba19be7a56ac7f42303e9a0c134781
 }
 
 int _filbuf(FILE * f) {
@@ -30,14 +26,14 @@ int _filbuf(FILE * f) {
     char char_read = EOF;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        //f->_bufsiz=BUFSIZ;
-        f->_base = malloc(f->_bufsiz);
+        f->_bufsiz = BUFSIZ; //Pourquoi enlever ça ?
+        f->_base = malloc(sizeof (char)*f->_bufsiz);
+        f->_ptr = f->_base;
     } else if (((int) f->_cnt) > 0) {
         /*
          * il reste des caracteres a lire dans le buffer
          * donc on retourne ce caractere.
          */
-        
         --f->_cnt;
         char_read = *f->_ptr++;
         return char_read;
@@ -47,7 +43,13 @@ int _filbuf(FILE * f) {
      * Remplis le buffer avec les 1024(ou taille du buffer) prochain caractere du fichier.
      */
     if (f->_bufsiz) {
-        f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
+<<<<<<< HEAD
+        if (f->_flag == _IOWRT) {
+=======
+        if(f->_flag==_IOREAD|_IORW){
+>>>>>>> 32be65c36a378d35bdfec448ae033426812f80a2
+            f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
+        }
     } else { //Si la taille du buffer est mauvaise (par exemple une valeur negative).
         f->_cnt = 0;
     }
@@ -115,7 +117,7 @@ int setvbuf(FILE *stream, char *buf, int mode, int size) {
     }
     stream->_ptr = buf;
     stream->_base = buf;
-    stream->_flag = mode;
+    stream->_flag |= mode;
     stream->_bufsiz = size;
     return 0;
 
@@ -135,47 +137,92 @@ int fprintf(FILE *stream, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
-    for (argument = va_arg(ap, char*); argument != NULL; argument = va_arg(ap, char*)) {
-        sizeOfString += strlen(va_arg(ap, char*));
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+
+        char buffer[500];
+        snprintf(buffer, 500, "\nfprintf argument: %s\n\n", argument);
+        write(2, buffer, strlen(buffer));
+
+        sizeOfString += strlen(argument);
     }
     char str[(strlen(format) + sizeOfString)];
     sprintf(str, format, ap);
     va_end(ap);
+    write(2, str, strlen(str));
     return fputs(str, stream);
+}
+
+int count_arg(const char *str) {
+    regex_t regex;
+    int reti;
+    regmatch_t match[5000];
+
+    /* Compile regular expression */
+    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
+    if (reti) {
+        fprintf(stderr, "Could not compile regex\n");
+        exit(1);
+    }
+
+    /* Execute regular expression */
+    reti = regexec(&regex, str, 5000, match, 0);
+    if (!reti) {
+        write(2, "match", strlen("match"));
+    } else if (reti == REG_NOMATCH) {
+        write(2, "no match", strlen("no match"));
+    } else {
+        exit(-1);
+    }
+
+    /* Free compiled regular expression if you want to use the regex_t again */
+    regfree(&regex);
+    int i;
+    for (i = 0; match[i].rm_eo != -1; i++);
+
+
+    char buffer[500];
+    snprintf(buffer, 500, "\nnombre de match: %d\n\n", i);
+    write(2, buffer, strlen(buffer));
+
+    return i;
 }
 
 int sprintf(char *str, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
-    int nbArguments = 0;
+    int nbArguments = count_arg(format);
     int sizeOfString = strlen(format);
 
-    for (argument = va_arg(ap, char*); argument; argument = va_arg(ap, char*)) {
-        nbArguments++;
-        sizeOfString += strlen(va_arg(ap, char*));
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+        sizeOfString += strlen(argument);
+        write(2, argument, strlen(argument));
     }
-    va_end(ap);
 
+    va_end(ap);
     regmatch_t match[nbArguments];
     char tmp[strlen(format) + sizeOfString];
     strcpy(tmp, format);
-    str = "";
 
 
     regex_t regex;
     int reti;
 
     /* Compile regular expression */
-    reti = regcomp(&regex, "^%[[:alnum:]]", 0);
+    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
     if (reti) {
-        return 0;
+        fprintf(stderr, "Could not compile regex\n");
+        exit(1);
     }
 
     /* Execute regular expression */
-    reti = regexec(&regex, str, 0, match, 0);
-    if (!(!reti || reti == REG_NOMATCH)) {
-        return 0;
+    reti = regexec(&regex, tmp, nbArguments, match, 0);
+    if (!reti) {
+        write(2, "Match", 5);
+    } else if (reti == REG_NOMATCH) {
+        write(2, "No Match", 8);
     }
 
     /* Free compiled regular expression if you want to use the regex_t again */
@@ -184,8 +231,12 @@ int sprintf(char *str, const char *format, ...) {
     va_start(ap, format);
     int currentDecalageOffset = 0;
     int currentArgument = 0;
-    for (argument = va_arg(ap, char*); argument != NULL; argument = va_arg(ap, char*)) {
-        strncat(str, tmp, match[currentArgument].rm_eo - 1);
+
+
+    for (int i = 0; i < count_arg(format); i++) {
+        argument = va_arg(ap, char*);
+        strncat(str, tmp, match[currentArgument].rm_eo - 2);
+        write(2, argument, strlen(argument));
         strcat(str, argument);
         *tmp += (match[currentArgument].rm_so - currentDecalageOffset);
         currentDecalageOffset += match[currentArgument].rm_so;
@@ -204,7 +255,10 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
     //TODO
+    tracer(stream);
     strcat(stream->_ptr, s);
+    write(2, stream->_ptr, strlen(stream->_ptr));
+    tracer(stream);
     return strlen(s);
 }
 
@@ -223,6 +277,10 @@ int fflush(FILE *stream) {
             if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
                 return -1;
             }
+            if ((&_IOB[i])->_flag & _IOMYBUF) {
+                free((&_IOB[i])->_base);
+                free((&_IOB[i])->_ptr);
+            }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
             _filbuf(&_IOB[i]);
@@ -230,6 +288,10 @@ int fflush(FILE *stream) {
     } else {
         if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
             return -1;
+        }
+        if (stream->_flag & _IOMYBUF) {
+            free(stream->_base);
+            free(stream->_ptr);
         }
         stream->_ptr = NULL;
         stream->_base = NULL;
