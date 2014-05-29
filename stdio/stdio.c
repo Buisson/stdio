@@ -26,8 +26,7 @@ int _filbuf(FILE * f) {
     char char_read = EOF;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        //f->_bufsiz=BUFSIZ;
-        puts("dans le if");
+        //f->_bufsiz=BUFSIZ; //Pourquoi enlever ça ?
         f->_base = malloc(f->_bufsiz);
     } else if (((int) f->_cnt) > 0) {
         /*
@@ -200,7 +199,7 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
     //TODO
-    strcat(stream->_ptr, s);
+//    strcat(stream->_ptr, s);
     return strlen(s);
 }
 
