@@ -11,13 +11,13 @@
 struct _iobuf _IOB[5000];
 
 void init() {
-    (&_IOB[0])->_file = dup(0);
+    (&_IOB[0])->_file = 0;
     _filbuf(&(_IOB[0]));
 
-    (&_IOB[1])->_file = dup(1);
-    _filbuf(&(_IOB[0]));
+    (&_IOB[1])->_file = 1;
+    _filbuf(&(_IOB[1]));
 
-    (&_IOB[2])->_file = dup(2);
+    (&_IOB[2])->_file = 2;
     _filbuf(&(_IOB[2]));
 }
 
@@ -113,7 +113,7 @@ int setvbuf(FILE *stream, char *buf, int mode, int size) {
     }
     stream->_ptr = buf;
     stream->_base = buf;
-    stream->_flag = mode;
+    stream->_flag |= mode;
     stream->_bufsiz = size;
     return 0;
 
@@ -202,7 +202,8 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
     //TODO
-//    strcat(stream->_ptr, s);
+    tracer(stream);
+    strcat(stream->_ptr, s);
     return strlen(s);
 }
 
@@ -221,6 +222,10 @@ int fflush(FILE *stream) {
             if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
                 return -1;
             }
+            if ((&_IOB[i])->_flag & _IOMYBUF) {
+                free((&_IOB[i])->_base);
+                free((&_IOB[i])->_ptr);
+            }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
             _filbuf(&_IOB[i]);
@@ -228,6 +233,10 @@ int fflush(FILE *stream) {
     } else {
         if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
             return -1;
+        }
+        if (stream->_flag & _IOMYBUF) {
+            free(stream->_base);
+            free(stream->_ptr);
         }
         stream->_ptr = NULL;
         stream->_base = NULL;
