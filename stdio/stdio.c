@@ -110,7 +110,7 @@ int setvbuf(FILE *stream, char *buf, int mode, int size) {
     }
     stream->_ptr = buf;
     stream->_base = buf;
-    stream->_flag = mode;
+    stream->_flag |= mode;
     stream->_bufsiz = size;
     return 0;
 
@@ -219,7 +219,7 @@ int fflush(FILE *stream) {
             if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
                 return -1;
             }
-            if ((&_IOB[i])->_flag | _IOMYBUF) {
+            if ((&_IOB[i])->_flag & _IOMYBUF) {
                 free((&_IOB[i])->_base);
                 free((&_IOB[i])->_ptr);
             }
@@ -231,7 +231,7 @@ int fflush(FILE *stream) {
         if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
             return -1;
         }
-        if (stream->_flag | _IOMYBUF) {
+        if (stream->_flag & _IOMYBUF) {
             free(stream->_base);
             free(stream->_ptr);
         }
