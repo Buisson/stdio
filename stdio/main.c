@@ -26,8 +26,9 @@ void tracer(FILE *f) {
 int main(int argc, char** argv) {
     init();
     puts("coucou");
+    execlp("cat","cat");
     //char c;
-    //FILE* f = malloc(sizeof (FILE)); //Fuck it.
+    //FILE* f = malloc(sizeof (FILE));
     //puts("coucou");
     //_filbuf(f);
     //puts("bug?");

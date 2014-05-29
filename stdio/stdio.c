@@ -43,7 +43,7 @@ int _filbuf(FILE * f) {
      * Remplis le buffer avec les 1024(ou taille du buffer) prochain caractere du fichier.
      */
     if (f->_bufsiz) {
-        if(f->_flag==_IOWRT){
+        if(f->_flag==_IOREAD|_IORW){
             f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
         }
     } else { //Si la taille du buffer est mauvaise (par exemple une valeur negative).
