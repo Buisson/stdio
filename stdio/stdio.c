@@ -218,6 +218,9 @@ int fflush(FILE *stream) {
             if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
                 return -1;
             }
+            if ((&_IOB[i])->_flag | _IOMYBUF) {
+                free((&_IOB[i])->_base);
+            }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
             _filbuf(&_IOB[i]);
