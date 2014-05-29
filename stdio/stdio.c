@@ -26,8 +26,9 @@ int _filbuf(FILE * f) {
     char char_read = EOF;
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
-        //f->_bufsiz=BUFSIZ; //Pourquoi enlever ça ?
-        f->_base = malloc(f->_bufsiz);
+        f->_bufsiz=BUFSIZ; //Pourquoi enlever ça ?
+        f->_base = malloc(sizeof(char)*f->_bufsiz);
+        f->_ptr=f->_base;
     } else if (((int) f->_cnt) > 0) {
         /*
          * il reste des caracteres a lire dans le buffer
@@ -42,7 +43,9 @@ int _filbuf(FILE * f) {
      * Remplis le buffer avec les 1024(ou taille du buffer) prochain caractere du fichier.
      */
     if (f->_bufsiz) {
-        f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
+        if(f->_flag==_IOWRT || f->_file==0){
+            f->_cnt = read(f->_file, (char *) (f->_ptr = f->_base), f->_bufsiz);
+        }
     } else { //Si la taille du buffer est mauvaise (par exemple une valeur negative).
         f->_cnt = 0;
     }
