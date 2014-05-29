@@ -10,6 +10,11 @@
 
 struct _iobuf _IOB[5000];
 
+void init() {
+    (&_IOB[0])->_file = dup(0);
+    _filbuf(&(_IOB[0]));
+}
+
 int _filbuf(FILE * f) {
     int n, c;
     char char_read = EOF;
