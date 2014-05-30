@@ -134,17 +134,17 @@ int main(int argc, char** argv) {
     while (--argc)
       copy(*++argv, dest);
 
-    return 0;
+    //return 0;
     
     char buf[BUFSIZ];
     FILE* fp;
     fp = popen("ls", "w");
-    tracer(fp);
+    //tracer(fp);
     if (fp == NULL) {
         write(2, "null\n", strlen("null\n"));
     }
-    fgets(buf, BUFSIZ, fp);
-    fputs(buf, stdout); //SEGFAULT ....
-
+    //fgets(buf, BUFSIZ, fp);
+    //fputs(buf, stdout); //SEGFAULT ....
+    pclose(fp);
     return 0;
 }

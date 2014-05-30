@@ -472,7 +472,7 @@ FILE * popen(const char *command, const char *type) {
 int pclose(FILE * stream) {
     int fd;
     fd = stream->_file;
-
+    sleep(2);       //Wait for the process ending.
     if (close(fd) == -1) {
         return -1;
     } else {
