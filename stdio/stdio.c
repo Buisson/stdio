@@ -236,7 +236,7 @@ int fputc(int c, FILE *stream) {
         write(2, "file descriptor is closed, die.\n", strlen("file descriptor is closed, die.\n"));
         exit(-1);
     }
-    tracer(stream);
+    //tracer(stream);
 
     if (stream->_flag & _IOREAD) {
         write(2, "cannot write on read-only file, die.\n", strlen("cannot write on read-only file, die.\n"));
@@ -253,7 +253,7 @@ int fputc(int c, FILE *stream) {
         fflush(stream);
         _filbuf(stream);
     }
-    tracer(stream);
+    //tracer(stream);
     return 1;
 }
 
@@ -282,7 +282,7 @@ void filbuf(FILE *stream) {
 }
 
 int fgetc(FILE *stream) {
-    tracer(stream);
+    //tracer(stream);
     if (stream->_cnt == 0) {
         filbuf(stream);
     }
@@ -351,13 +351,15 @@ int fflush(FILE *stream) {
 FILE * fdopen(int fd, const char *mode) {
     if (&_IOB[fd] != NULL) {
         FILE* f = &_IOB[fd];
+        _filbuf(f);
+        //tracer(f);
         return f;//fopen(f, mode); //voir si sa plante ...
     } else {
         FILE* f = malloc(sizeof(FILE));
         f->_base = malloc(sizeof (char)*BUFSIZ);
         f->_file = strlen(_IOB);
         filbuf(f);
-    
+        //tracer(f);
         return f;
     }
 

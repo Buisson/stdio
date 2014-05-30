@@ -42,10 +42,11 @@ int main(int argc, char** argv) {
     char buf[BUFSIZ];
 
     fp = popen("ls", "r");
+    //tracer(fp);
     if (fp == NULL) {
         write(2, "null\n", strlen("null\n"));
     }
-    tracer(fp);
+    //tracer(fp);
     while (fgets(buf, BUFSIZ, fp) != NULL) {
         fputs(buf, stdout); //SEGFAULT ....
     }
