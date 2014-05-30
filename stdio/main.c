@@ -25,7 +25,44 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
-    printf("coucou %s\n %s \n", "tu veux voir ma bite?", "non");
+    // FILE* f = fopen("toto.txt", "w");
+    //tracer(f);
+    //fputs("cannot write on read-only file, die.\n", stderr);
+
+    /*
+        char sentence [256];
+        sentence[0] = 'C';
+        sentence[1] = 'C';
+        sentence[2] = '\0';
+        fputs(sentence, f);
+        fflush(f);
+        fclose(f);
+     */
+        char buf[BUFSIZ];
+        FILE* fp = malloc(sizeof(FILE));
+        fp = popen("ls", "w");
+        tracer(fp);
+        if (fp == NULL) {
+            write(2, "null\n", strlen("null\n"));
+        }
+        while (fgets(buf, BUFSIZ, fp) != NULL) {
+            fputs(buf, stdout); //SEGFAULT ....
+
+        }
+    
+    //tracer(fp);
+    
+    /*
+    while (1) {
+        char buf[BUFSIZ];
+        fgets(buf, BUFSIZ, stdin);
+        fputs(buf, stdout); //SEGFAULT ....
+        //  for (int i = 0; i < BUFSIZ; i++) {
+        //     buf[i] = '\0';
+        //}
+
+    }*/
+
 
     return 0;
 }
