@@ -47,7 +47,7 @@ int _filbuf(FILE * f) {
 }
 
 FILE *fopen(const char *path, const char *mode) {
-    FILE* f = malloc(sizeof (FILE));
+    FILE* f;
     int flag;
 
     if (!strcmp(mode, "r")) {
@@ -212,6 +212,7 @@ int sprintf(char *str, const char *format, ...) {
     int nbArguments = count_arg(format);
     regmatch_t match[nbArguments];
     char *tmp = malloc(sizeof (char) * (strlen(format) + sizeOfString));
+    char *tmpPointer = tmp;
     strcpy(tmp, format);
     strcpy(str, "");
 
@@ -236,6 +237,7 @@ int sprintf(char *str, const char *format, ...) {
     }
     strcat(str, tmp);
     regfree(&regex);
+    free(tmpPointer);
     return strlen(str);
 
 }
@@ -249,6 +251,7 @@ int sprintf2(char *str, const char *format, char * arguments[]) {
     int nbArguments = count_arg(format);
     regmatch_t match[nbArguments];
     char *tmp = malloc(sizeof (char) * (strlen(format) + sizeOfString));
+    char *tmpPointer = tmp;
     strcpy(tmp, format);
     strcpy(str, "");
 
@@ -274,6 +277,7 @@ int sprintf2(char *str, const char *format, char * arguments[]) {
     }
     strcat(str, tmp);
     regfree(&regex);
+    free(tmpPointer);
     return strlen(str);
 }
 
@@ -400,9 +404,11 @@ FILE * fdopen(int fd, const char *mode) {
         //tracer(f);
         return f; //fopen(f, mode); //voir si sa plante ...
     } else {
-        FILE* f = malloc(sizeof (FILE));
+        FILE* f;
         f->_base = malloc(sizeof (char)*BUFSIZ);
         f->_file = strlen(_IOB);
+        f->_flag |= _IOMYBUF;
+
         _filbuf(f);
         //tracer(f);
         return f;
@@ -476,8 +482,9 @@ int pclose(FILE * stream) {
 }
 
 FILE * tmpfile(void) {
-    FILE* f = malloc(sizeof (FILE));
+    FILE* f;
     f->_base = malloc(sizeof (char)*BUFSIZ);
+    f->_flag |= _IOMYBUF;
     f->_file = strlen(_IOB);
     filbuf(f);
     //_IOB[strlen(_IOB)]=f;
