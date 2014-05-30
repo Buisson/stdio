@@ -351,9 +351,14 @@ int fflush(FILE *stream) {
 FILE * fdopen(int fd, const char *mode) {
     if (&_IOB[fd] != NULL) {
         FILE* f = &_IOB[fd];
-        return fopen(f, mode); //voir si sa plante ...
+        return f;//fopen(f, mode); //voir si sa plante ...
     } else {
-        return NULL;
+        FILE* f = malloc(sizeof(FILE));
+        f->_base = malloc(sizeof (char)*BUFSIZ);
+        f->_file = strlen(_IOB);
+        filbuf(f);
+    
+        return f;
     }
 
 }
