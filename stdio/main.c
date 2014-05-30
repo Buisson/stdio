@@ -38,19 +38,25 @@ int main(int argc, char** argv) {
         fflush(f);
         fclose(f);
      */
-    FILE *fp;
-    char buf[BUFSIZ];
 
-    fp = popen("ls", "r");
+    /*
+        fp = popen("ls", "r");
+        tracer(fp);
+        if (fp == NULL) {
+            write(2, "null\n", strlen("null\n"));
+        }
+     */
     //tracer(fp);
-    if (fp == NULL) {
-        write(2, "null\n", strlen("null\n"));
-    }
-    //tracer(fp);
-    while (fgets(buf, BUFSIZ, fp) != NULL) {
+    while (1) {
+        char buf[BUFSIZ];
+        fgets(buf, BUFSIZ, stdin);
         fputs(buf, stdout); //SEGFAULT ....
+        //  for (int i = 0; i < BUFSIZ; i++) {
+        //     buf[i] = '\0';
+        //}
+
     }
-    pclose(fp);
+
 
     return 0;
 }

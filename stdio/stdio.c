@@ -12,21 +12,26 @@ struct _iobuf _IOB[5000];
 
 void init() {
     (&_IOB[0])->_file = 0;
-    (&_IOB[0])->_flag = _IOMYBUF | _IOREAD;
+    (&_IOB[0])->_flag = _IOMYBUF | _IOREAD | _IONBF;
     _filbuf(&(_IOB[0]));
 
     (&_IOB[1])->_file = 1;
-    (&_IOB[1])->_flag = _IOMYBUF | _IOWRT;
+    (&_IOB[1])->_flag = _IOMYBUF | _IOWRT | _IOLBF;
     _filbuf(&(_IOB[1]));
 
     (&_IOB[2])->_file = 2;
-    (&_IOB[2])->_flag = _IOMYBUF | _IOWRT;
+    (&_IOB[2])->_flag = _IOMYBUF | _IOWRT | _IONBF;
     _filbuf(&(_IOB[2]));
 }
 
 int _filbuf(FILE * f) {
 
-    f->_cnt = BUFSIZ;
+    if (f->_flag & _IOWRT) {
+        f->_cnt = BUFSIZ;
+    } else {
+        f->_cnt = 0;
+    }
+
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
         f->_bufsiz = BUFSIZ;
@@ -259,7 +264,7 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
 
-    write(2, s, strlen(s));
+    //write(2, s, strlen(s));
     for (int i = 0; i < strlen(s); i++) {
         fputc(s[i], stream);
     }
@@ -297,12 +302,15 @@ char *fgets(char *s, int size, FILE *stream) {
         exit(-1);
     }
     char character;
+    int index = 0;
     do {
         character = (unsigned char) fgetc(stream);
         if (character != EOF) {
-            s[strlen(s)] = character;
+            s[index] = character;
+            index++;
         }
     } while (character != '\n' && character != EOF && --size != 0);
+    s[index] = '\0';
     return s;
 }
 
@@ -312,6 +320,9 @@ char *gets(char *s) {
 
 int fclose(FILE *fp) {
     fflush(fp);
+    if (fp->_flag & _IOMYBUF) {
+        free(fp->_base);
+    }
     return close(fp->_file);
 }
 
@@ -324,9 +335,6 @@ int fflush(FILE *stream) {
                 }
             }
 
-            if ((&_IOB[i])->_flag & _IOMYBUF) {
-                free((&_IOB[i])->_base);
-            }
             (&_IOB[i])->_ptr = NULL;
             (&_IOB[i])->_base = NULL;
             _filbuf(&_IOB[i]);
@@ -337,9 +345,7 @@ int fflush(FILE *stream) {
                 return -1;
             }
         }
-        if (stream->_flag & _IOMYBUF) {
-            free(stream->_base);
-        }
+
         stream->_ptr = NULL;
         stream->_base = NULL;
         _filbuf(stream);
@@ -353,9 +359,9 @@ FILE * fdopen(int fd, const char *mode) {
         FILE* f = &_IOB[fd];
         _filbuf(f);
         //tracer(f);
-        return f;//fopen(f, mode); //voir si sa plante ...
+        return f; //fopen(f, mode); //voir si sa plante ...
     } else {
-        FILE* f = malloc(sizeof(FILE));
+        FILE* f = malloc(sizeof (FILE));
         f->_base = malloc(sizeof (char)*BUFSIZ);
         f->_file = strlen(_IOB);
         filbuf(f);
