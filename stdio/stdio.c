@@ -46,32 +46,32 @@ FILE *fopen(const char *path, const char *mode) {
 
     if (!strcmp(mode, "r")) {
         f->_flag = _IOREAD;
-        if(!(f->_file = open(path, O_RDONLY))){
+        if (!(f->_file = open(path, O_RDONLY))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else if (!strcmp(mode, "r+")) {
         f->_flag = (_IORW);
-        if(!(f->_file = open(path, O_RDWR))){
+        if (!(f->_file = open(path, O_RDWR))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else if (!strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
-        if(!(f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT))){
+        if (!(f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else if (!strcmp(mode, "w+")) {
         f->_flag = (_IORW);
-        if(!(f->_file = open(path, O_RDWR | O_CREAT))){
+        if (!(f->_file = open(path, O_RDWR | O_CREAT))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else if (!strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
-        if(!(f->_file = open(path, O_APPEND | O_WRONLY))){
+        if (!(f->_file = open(path, O_APPEND | O_WRONLY))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else if (!strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
-        if(!(f->_file = open(path, O_APPEND | O_RDWR))){
+        if (!(f->_file = open(path, O_APPEND | O_RDWR))) {
             write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
         }
     } else {
@@ -283,6 +283,7 @@ void filbuf(FILE *stream) {
 }
 
 int fgetc(FILE *stream) {
+    tracer(stream);
     if (stream->_cnt == 0) {
         filbuf(stream);
     }
@@ -364,69 +365,69 @@ FILE * freopen(const char *path, const char *mode, FILE * stream) {
     return ret;
 }
 
-FILE * popen(const char *command, const char *type){
-    int p[2],pid;
-    int end_parent,end_child;
-    
-    if(type=='r'){
-        end_parent=0;  //READ
-        end_child=1;  //WRITE;
-    }else if(type=='w'){
-        end_parent=1; //WRITE
-        end_child=0;  //READ
-    }else{
+FILE * popen(const char *command, const char *type) {
+    int p[2], pid;
+    int end_parent, end_child;
+
+    if (!strcmp(type, "r")) {
+        end_parent = 0; //READ
+        end_child = 1; //WRITE;
+    } else if (!strcmp(type, "w")) {
+        end_parent = 1; //WRITE
+        end_child = 0; //READ
+    } else {
         return NULL;
     }
-    
-    if(pipe(p)==-1){
-        return NULL;   //return null if pipe can't be create.
+
+    if (pipe(p) == -1) {
+        return NULL; //return null if pipe can't be create.
     }
-    if((pid=fork())==-1){
+    if ((pid = fork()) == -1) {
         close(p[0]);
         close(p[1]);
-        return NULL;     //Return null and close the pipe if fork fail.
+        return NULL; //Return null and close the pipe if fork fail.
     }
-    
+
     //parent
-    if(pid>0){
-        if(close(p[end_child])==-1){
+    if (pid > 0) {
+        if (close(p[end_child]) == -1) {
             return NULL;
         }
-        return fdopen(p[end_parent],type);
+        return fdopen(p[end_parent], type);
     }
-     
+
     //child
-    if(close(p[end_parent])==-1){
+    if (close(p[end_parent]) == -1) {
         exit(1);
     }
-    
-    if(dup2(p[end_child],end_child)==-1){
+
+    if (dup2(p[end_child], end_child) == -1) {
         exit(1);
     }
-    if(close(p[end_child])==-1){
+    if (close(p[end_child]) == -1) {
         exit(1);
     }
-    execl("/bin/sh","sh","-c",command,NULL);
+    execl("/bin/sh", "sh", "-c", command, NULL);
     exit(1);
-    
+
 }
 
-int pclose(FILE * stream){
+int pclose(FILE * stream) {
     int fd;
     fd = stream->_file;
-    
-    if(close(fd)==-1){
+
+    if (close(fd) == -1) {
         return -1;
-    }else{
+    } else {
         return 1;
     }
-    
+
 }
 
-FILE * tmpfile(void){
-    FILE* f = malloc(sizeof(FILE));
-    f->_base=malloc(sizeof(char)*BUFSIZ);
-    f->_file=strlen(_IOB);
+FILE * tmpfile(void) {
+    FILE* f = malloc(sizeof (FILE));
+    f->_base = malloc(sizeof (char)*BUFSIZ);
+    f->_file = strlen(_IOB);
     filbuf(f);
     //_IOB[strlen(_IOB)]=f;
     return f;

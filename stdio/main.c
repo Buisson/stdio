@@ -25,33 +25,29 @@ void tracer(FILE *f) {
  */
 int main(int argc, char** argv) {
     init();
-    FILE* f = fopen("toto.txt", "w");
-    tracer(f);
+    // FILE* f = fopen("toto.txt", "w");
+    //tracer(f);
     //fputs("cannot write on read-only file, die.\n", stderr);
 
-
-    char sentence [256];
-    sentence[0] = 'C';
-    sentence[1] = 'C';
-    sentence[2] = '\0';
-    fputs(sentence, f);
-    fflush(f);
-    fclose(f);
-
-    // printf("bite %s \n", "coucou");
-    // fflush(stdout);
-    //execlp("cat", "cat");
-    //char c;
-    //FILE* f = malloc(sizeof (FILE)); //Fuck it.
-    //puts("coucou");
-    //_filbuf(f);
-    //puts("bug?");
+    /*
+        char sentence [256];
+        sentence[0] = 'C';
+        sentence[1] = 'C';
+        sentence[2] = '\0';
+        fputs(sentence, f);
+        fflush(f);
+        fclose(f);
+     */
     FILE *fp;
     char buf[BUFSIZ];
-    
-    fp=popen("ls","r");
-    while(fgets(buf,BUFSIZ,fp) != NULL){
-        fputs(buf,stdout);                  //SEGFAULT ....
+
+    fp = popen("ls", "r");
+    if (fp == NULL) {
+        write(2, "null\n", strlen("null\n"));
+    }
+    tracer(fp);
+    while (fgets(buf, BUFSIZ, fp) != NULL) {
+        fputs(buf, stdout); //SEGFAULT ....
     }
     pclose(fp);
 
