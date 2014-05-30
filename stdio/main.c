@@ -38,15 +38,21 @@ int main(int argc, char** argv) {
         fflush(f);
         fclose(f);
      */
-
-    /*
-        fp = popen("ls", "r");
+        char buf[BUFSIZ];
+        FILE* fp = malloc(sizeof(FILE));
+        fp = popen("ls", "w");
         tracer(fp);
         if (fp == NULL) {
             write(2, "null\n", strlen("null\n"));
         }
-     */
+        while (fgets(buf, BUFSIZ, fp) != NULL) {
+            fputs(buf, stdout); //SEGFAULT ....
+
+        }
+    
     //tracer(fp);
+    
+    /*
     while (1) {
         char buf[BUFSIZ];
         fgets(buf, BUFSIZ, stdin);
@@ -55,7 +61,7 @@ int main(int argc, char** argv) {
         //     buf[i] = '\0';
         //}
 
-    }
+    }*/
 
 
     return 0;

@@ -364,7 +364,7 @@ FILE * fdopen(int fd, const char *mode) {
         FILE* f = malloc(sizeof (FILE));
         f->_base = malloc(sizeof (char)*BUFSIZ);
         f->_file = strlen(_IOB);
-        filbuf(f);
+        _filbuf(f);
         //tracer(f);
         return f;
     }
