@@ -110,8 +110,13 @@ int setvbuf(FILE *stream, char *buf, int mode, int size) {
 int printf(const char *format, ...) {
     va_list ap;
     va_start(ap, format);
-    int numberChar = fprintf(stdout, format, ap);
+    char * arguments[count_arg(format)];
+    for (int i = 0; i < count_arg(format); i++) {
+        arguments[i] = va_arg(ap, char*);
+    }
     va_end(ap);
+
+    int numberChar = fprintf2(stdout, format, arguments);
     return numberChar;
 
 }
@@ -123,35 +128,49 @@ int count_arg(const char *str) {
     regex_t regex;
     int reti;
     regmatch_t match[5000];
-
+    int numberMatch = 0;
+    char * tmp = malloc(sizeof (str) * strlen(str));
+    strcpy(tmp, str);
+    char * tmpPointer = tmp;
     /* Compile regular expression */
-    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
+    reti = regcomp(&regex, "(%[[:alpha:]])", REG_ICASE | REG_EXTENDED);
     if (reti) {
-        fprintf(stderr, "Could not compile regex\n");
+        char * err = "Could not compile regex\n";
+        write(2, err, strlen(err));
         exit(1);
     }
+    do {
 
-    /* Execute regular expression */
-    reti = regexec(&regex, str, 5000, match, 0);
-    if (!reti) {
-        write(2, "match", strlen("match"));
-    } else if (reti == REG_NOMATCH) {
-        write(2, "no match", strlen("no match"));
-    } else {
-        exit(-1);
-    }
+        /* Execute regular expression */
+        reti = regexec(&regex, tmp, 5000, match, 0);
+        if (!reti && match[0].rm_eo != -1) {
+            numberMatch++;
+            tmp = tmp + match[0].rm_eo;
+        } else if (reti == REG_NOMATCH) {
+            //   write(2, "no match", strlen("no match"));
+            break;
+        } else {
+            exit(-1);
+        }
 
+    } while (!reti && match[0].rm_eo != -1);
     /* Free compiled regular expression if you want to use the regex_t again */
     regfree(&regex);
-    int i;
-    for (i = 0; match[i].rm_eo != -1; i++);
 
+    free(tmpPointer);
+    return numberMatch;
+}
 
-    char buffer[500];
-    snprintf(buffer, 500, "\nnombre de match: %d\n\n", i);
-    write(2, buffer, strlen(buffer));
-
-    return i;
+int fprintf2(FILE *stream, const char *format, char* arguments[]) {
+    int sizeOfString = strlen(format);
+    char* argument;
+    for (int i = 0; i < count_arg(format); i++) {
+        sizeOfString += strlen(arguments[i]);
+    }
+    char str[(strlen(format) + sizeOfString)];
+    sprintf2(str, format, arguments);
+    //write(2, str, strlen(str));
+    return fputs(str, stream);
 }
 
 int fprintf(FILE *stream, const char *format, ...) {
@@ -159,19 +178,17 @@ int fprintf(FILE *stream, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
+    char* arguments[count_arg(format)];
     for (int i = 0; i < count_arg(format); i++) {
         argument = va_arg(ap, char*);
-
-        char buffer[500];
-        snprintf(buffer, 500, "\nfprintf argument: %s\n\n", argument);
-        write(2, buffer, strlen(buffer));
-
+        arguments[i] = argument;
         sizeOfString += strlen(argument);
     }
-    char str[(strlen(format) + sizeOfString)];
-    sprintf(str, format, ap);
     va_end(ap);
-    write(2, str, strlen(str));
+
+    char str[(strlen(format) + sizeOfString)];
+    sprintf2(str, format, arguments);
+    // write(2, str, strlen(str));
     return fputs(str, stream);
 }
 
@@ -179,22 +196,24 @@ int sprintf(char *str, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     char* argument;
-    int nbArguments = count_arg(format);
+    char* arguments[count_arg(format)];
+
     int sizeOfString = strlen(format);
 
     for (int i = 0; i < count_arg(format); i++) {
         argument = va_arg(ap, char*);
+        arguments[i] = argument;
         sizeOfString += strlen(argument);
         write(2, argument, strlen(argument));
     }
 
     va_end(ap);
 
+    int nbArguments = count_arg(format);
     regmatch_t match[nbArguments];
-    char tmp[strlen(format) + sizeOfString];
+    char *tmp = malloc(sizeof (char) * (strlen(format) + sizeOfString));
     strcpy(tmp, format);
-    str = "";
-
+    strcpy(str, "");
 
     regex_t regex;
     int reti;
@@ -202,38 +221,60 @@ int sprintf(char *str, const char *format, ...) {
     /* Compile regular expression */
     reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
     if (reti) {
-        fprintf(stderr, "Could not compile regex\n");
+        char * err = "Could not compile regex\n";
+        write(2, err, strlen(err));
         exit(1);
     }
 
-    /* Execute regular expression */
-    reti = regexec(&regex, tmp, nbArguments, match, 0);
-    if (!reti) {
-        write(2, "Match", 5);
-    } else if (reti == REG_NOMATCH) {
-        write(2, "No Match", 8);
-    }
-
-    /* Free compiled regular expression if you want to use the regex_t again */
-    regfree(&regex);
-
-    va_start(ap, format);
-    int currentDecalageOffset = 0;
-    int currentArgument = 0;
-
-
-    for (int i = 0; i < count_arg(format); i++) {
-        argument = va_arg(ap, char*);
-        strncat(str, tmp, match[currentArgument].rm_eo - 2);
-        write(2, argument, strlen(argument));
+    int i = 0;
+    for (; i < count_arg(format); i++) {
+        argument = arguments[i];
+        reti = regexec(&regex, tmp, nbArguments, match, 0);
+        strncat(str, tmp, match[0].rm_so);
         strcat(str, argument);
-        *tmp += (match[currentArgument].rm_so - currentDecalageOffset);
-        currentDecalageOffset += match[currentArgument].rm_so;
-        currentArgument++;
+        tmp = (tmp + match[0].rm_eo);
     }
-
+    strcat(str, tmp);
+    regfree(&regex);
     return strlen(str);
 
+}
+
+int sprintf2(char *str, const char *format, char * arguments[]) {
+    int sizeOfString = strlen(format);
+    for (int i = 0; i < count_arg(format); i++) {
+        sizeOfString += strlen(arguments[i]);
+    }
+
+    int nbArguments = count_arg(format);
+    regmatch_t match[nbArguments];
+    char *tmp = malloc(sizeof (char) * (strlen(format) + sizeOfString));
+    strcpy(tmp, format);
+    strcpy(str, "");
+
+    regex_t regex;
+    int reti;
+
+    /* Compile regular expression */
+    reti = regcomp(&regex, "%[[:alpha:]]", REG_ICASE | REG_EXTENDED);
+    if (reti) {
+        char * err = "Could not compile regex\n";
+        write(2, err, strlen(err));
+        exit(1);
+    }
+
+    char * argument;
+    int i = 0;
+    for (; i < count_arg(format); i++) {
+        argument = arguments[i];
+        reti = regexec(&regex, tmp, nbArguments, match, 0);
+        strncat(str, tmp, match[0].rm_so);
+        strcat(str, argument);
+        tmp = (tmp + match[0].rm_eo);
+    }
+    strcat(str, tmp);
+    regfree(&regex);
+    return strlen(str);
 }
 
 int fputc(int c, FILE *stream) {
@@ -263,8 +304,6 @@ int fputc(int c, FILE *stream) {
 }
 
 int fputs(const char *s, FILE *stream) {
-
-    //write(2, s, strlen(s));
     for (int i = 0; i < strlen(s); i++) {
         fputc(s[i], stream);
     }
