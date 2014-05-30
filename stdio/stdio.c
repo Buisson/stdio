@@ -43,40 +43,39 @@ int _filbuf(FILE * f) {
 
 FILE *fopen(const char *path, const char *mode) {
     FILE* f = malloc(sizeof (FILE));
+    int flag;
 
     if (!strcmp(mode, "r")) {
         f->_flag = _IOREAD;
-        if (!(f->_file = open(path, O_RDONLY))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_RDONLY;
+
     } else if (!strcmp(mode, "r+")) {
         f->_flag = (_IORW);
-        if (!(f->_file = open(path, O_RDWR))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_RDWR;
+
     } else if (!strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
-        if (!(f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_WRONLY | O_TRUNC | O_CREAT;
+
+
     } else if (!strcmp(mode, "w+")) {
         f->_flag = (_IORW);
-        if (!(f->_file = open(path, O_RDWR | O_CREAT))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_RDWR | O_CREAT;
     } else if (!strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
-        if (!(f->_file = open(path, O_APPEND | O_WRONLY))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_APPEND | O_WRONLY;
+
     } else if (!strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
-        if (!(f->_file = open(path, O_APPEND | O_RDWR))) {
-            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        }
+        flag = O_APPEND | O_RDWR;
     } else {
         f->_flag = (_IOERR);
         write(2, "Bad mode, die.\n", strlen("Bad mode, die.\n"));
+    }
+
+    if ((f->_file = open(path, flag)) == -1) {
+        write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        exit(-1);
     }
 
     _filbuf(f);
