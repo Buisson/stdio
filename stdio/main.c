@@ -46,8 +46,14 @@ int main(int argc, char** argv) {
     //puts("coucou");
     //_filbuf(f);
     //puts("bug?");
-
-
+    FILE *fp;
+    char buf[BUFSIZ];
+    
+    fp=popen("ls","r");
+    while(fgets(buf,BUFSIZ,fp) != NULL){
+        fputs(buf,stdout);                  //SEGFAULT ....
+    }
+    pclose(fp);
 
     return 0;
 }

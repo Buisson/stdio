@@ -46,22 +46,34 @@ FILE *fopen(const char *path, const char *mode) {
 
     if (!strcmp(mode, "r")) {
         f->_flag = _IOREAD;
-        f->_file = open(path, O_RDONLY);
+        if(!(f->_file = open(path, O_RDONLY))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else if (!strcmp(mode, "r+")) {
         f->_flag = (_IORW);
-        f->_file = open(path, O_RDWR);
+        if(!(f->_file = open(path, O_RDWR))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else if (!strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
-        f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT);
+        if(!(f->_file = open(path, O_WRONLY | O_TRUNC | O_CREAT))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else if (!strcmp(mode, "w+")) {
         f->_flag = (_IORW);
-        f->_file = open(path, O_RDWR | O_CREAT);
+        if(!(f->_file = open(path, O_RDWR | O_CREAT))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else if (!strcmp(mode, "a")) {
         f->_flag = (_IOWRT | _IOEOF);
-        f->_file = open(path, O_APPEND | O_WRONLY);
+        if(!(f->_file = open(path, O_APPEND | O_WRONLY))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else if (!strcmp(mode, "a+")) {
         f->_flag = (_IORW | _IOEOF);
-        f->_file = open(path, O_APPEND | O_RDWR);
+        if(!(f->_file = open(path, O_APPEND | O_RDWR))){
+            write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
+        }
     } else {
         f->_flag = (_IOERR);
         write(2, "Bad mode, die.\n", strlen("Bad mode, die.\n"));
@@ -281,6 +293,7 @@ int fgetc(FILE *stream) {
 char *fgets(char *s, int size, FILE *stream) {
     if (size < 0) {
         fputs("size cannot be less than zero, die.\n", stderr);
+        return NULL;
         exit(-1);
     }
     char character;
@@ -347,14 +360,76 @@ FILE * fdopen(int fd, const char *mode) {
 
 FILE * freopen(const char *path, const char *mode, FILE * stream) {
     FILE* ret = fopen(path, mode);
-    ret->_file = stream;
+    ret->_file = stream->_file;
     return ret;
 }
 
-FILE * popen(const char *command, const char *type);
+FILE * popen(const char *command, const char *type){
+    int p[2],pid;
+    int end_parent,end_child;
+    
+    if(type=='r'){
+        end_parent=0;  //READ
+        end_child=1;  //WRITE;
+    }else if(type=='w'){
+        end_parent=1; //WRITE
+        end_child=0;  //READ
+    }else{
+        return NULL;
+    }
+    
+    if(pipe(p)==-1){
+        return NULL;   //return null if pipe can't be create.
+    }
+    if((pid=fork())==-1){
+        close(p[0]);
+        close(p[1]);
+        return NULL;     //Return null and close the pipe if fork fail.
+    }
+    
+    //parent
+    if(pid>0){
+        if(close(p[end_child])==-1){
+            return NULL;
+        }
+        return fdopen(p[end_parent],type);
+    }
+     
+    //child
+    if(close(p[end_parent])==-1){
+        exit(1);
+    }
+    
+    if(dup2(p[end_child],end_child)==-1){
+        exit(1);
+    }
+    if(close(p[end_child])==-1){
+        exit(1);
+    }
+    execl("/bin/sh","sh","-c",command,NULL);
+    exit(1);
+    
+}
 
-int pclose(FILE * stream);
+int pclose(FILE * stream){
+    int fd;
+    fd = stream->_file;
+    
+    if(close(fd)==-1){
+        return -1;
+    }else{
+        return 1;
+    }
+    
+}
 
-FILE * tmpfile(void);
+FILE * tmpfile(void){
+    FILE* f = malloc(sizeof(FILE));
+    f->_base=malloc(sizeof(char)*BUFSIZ);
+    f->_file=strlen(_IOB);
+    filbuf(f);
+    //_IOB[strlen(_IOB)]=f;
+    return f;
+}
 
 
