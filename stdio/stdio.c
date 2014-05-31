@@ -9,22 +9,63 @@
 #include <string.h>
 
 struct _iobuf _IOB[5000];
+char errmsg[500];
+void _allocate(FILE *);
 
 void init() {
     (&_IOB[0])->_file = 0;
     (&_IOB[0])->_flag = _IOMYBUF | _IOREAD | _IONBF;
-    _filbuf(&(_IOB[0]));
+    _allocate(&(_IOB[0]));
 
     (&_IOB[1])->_file = 1;
     (&_IOB[1])->_flag = _IOMYBUF | _IOWRT | _IOLBF;
-    _filbuf(&(_IOB[1]));
+    _allocate(&(_IOB[1]));
 
     (&_IOB[2])->_file = 2;
     (&_IOB[2])->_flag = _IOMYBUF | _IOWRT | _IONBF;
-    _filbuf(&(_IOB[2]));
+    _allocate(&(_IOB[2]));
 }
 
-int _filbuf(FILE * f) {
+int _flsbuf(unsigned char c, FILE* stream) {
+
+    if (stream == NULL) {
+        for (int i = 0; &_IOB[i] != NULL; i++) {
+            if ((&_IOB[i])->_flag & _IOWRT || (&_IOB[i])->_flag & _IORW) {
+                if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
+                    perror("stdio.c:");
+                    (&_IOB[i])->_flag |= _IOERR;
+                    return -1;
+                }
+            }
+
+            for (int i = 0; i < (&_IOB[i])->_bufsiz; i++) {
+                (&_IOB[i])->_base[i] = c;
+            }
+            (&_IOB[i])->_ptr = (&_IOB[i])->_base;
+            (&_IOB[i])->_cnt = (&_IOB[i])->_bufsiz;
+
+        }
+    } else {
+        if (stream->_flag & _IOWRT || stream->_flag & _IORW) {
+            if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
+                perror("stdio.c:");
+                stream->_flag |= _IOERR;
+                return -1;
+            }
+        }
+
+        for (int i = 0; i < stream->_bufsiz; i++) {
+            stream->_base[i] = '\0';
+        }
+        stream->_ptr = stream->_base;
+        stream->_cnt = stream->_bufsiz;
+        return 0;
+    }
+
+
+}
+
+void _allocate(FILE * f) {
 
     if (f->_flag & _IOWRT) {
         f->_cnt = BUFSIZ;
@@ -37,13 +78,9 @@ int _filbuf(FILE * f) {
         f->_bufsiz = BUFSIZ;
         f->_base = malloc(sizeof (char)*f->_bufsiz);
         f->_ptr = f->_base;
-        return 1;
     } else {
         f->_ptr = f->_base;
-        return 0;
     }
-
-
 }
 
 FILE *fopen(const char *path, const char *mode) {
@@ -53,16 +90,12 @@ FILE *fopen(const char *path, const char *mode) {
     if (!strcmp(mode, "r")) {
         f->_flag = _IOREAD;
         flag = O_RDONLY;
-
     } else if (!strcmp(mode, "r+")) {
         f->_flag = (_IORW);
         flag = O_RDWR;
-
     } else if (!strcmp(mode, "w")) {
         f->_flag = (_IOWRT);
         flag = O_WRONLY | O_TRUNC | O_CREAT;
-
-
     } else if (!strcmp(mode, "w+")) {
         f->_flag = (_IORW);
         flag = O_RDWR | O_CREAT;
@@ -75,15 +108,18 @@ FILE *fopen(const char *path, const char *mode) {
         flag = O_APPEND | O_RDWR;
     } else {
         f->_flag = (_IOERR);
-        write(2, "Bad mode, die.\n", strlen("Bad mode, die.\n"));
+        snprintf(errmsg, 500, "Bad mode, die.\n");
+        write(2, errmsg, strlen(errmsg));
     }
 
     if ((f->_file = open(path, flag)) == -1) {
-        write(2, "Open fail, die.\n", strlen("Open fail, die.\n"));
-        exit(-1);
+        snprintf(errmsg, 500, "Open fail, die.\n");
+        write(2, errmsg, strlen(errmsg));
+        f->_flag |= _IOERR;
+        return NULL;
     }
 
-    _filbuf(f);
+    _allocate(f);
     if (!(f->_flag & _IOERR)) {
         return f;
     } else {
@@ -135,8 +171,8 @@ int count_arg(const char *str) {
     /* Compile regular expression */
     reti = regcomp(&regex, "(%[[:alpha:]])", REG_ICASE | REG_EXTENDED);
     if (reti) {
-        char * err = "Could not compile regex\n";
-        write(2, err, strlen(err));
+        snprintf(errmsg, 500, "Could not compile regex\n");
+        write(2, errmsg, strlen(errmsg));
         exit(1);
     }
     do {
@@ -289,21 +325,19 @@ int fputc(int c, FILE *stream) {
     //tracer(stream);
 
     if (stream->_flag & _IOREAD) {
+
         write(2, "cannot write on read-only file, die.\n", strlen("cannot write on read-only file, die.\n"));
         exit(-1);
     }
     if (stream->_cnt == 0) {
-        fflush(stream);
-        _filbuf(stream);
+        _flsbuf('\0', stream);
     }
     stream->_ptr[0] = c;
     stream->_cnt--;
     stream->_ptr++;
     if ((stream->_flag & _IOLBF && c == '\n') || stream->_flag & _IONBF) {
-        fflush(stream);
-        _filbuf(stream);
+        _flsbuf('\0', stream);
     }
-    //tracer(stream);
     return 1;
 }
 
@@ -319,20 +353,23 @@ int puts(const char *s) {
     return fputs(s, stdout);
 }
 
-void filbuf(FILE *stream) {
+int _filbuf(FILE *stream) {
     stream->_cnt = read(stream->_file, stream->_base, BUFSIZ);
     stream->_ptr = stream->_base;
     if (stream->_cnt == -1) {
-        fputs("read file error, die.\n", stderr);
-        exit(-1);
+        perror("stdio.c:");
+        stream->_flag |= _IOERR;
+        return -1;
     }
 
+    return 0;
 }
 
 int fgetc(FILE *stream) {
     //tracer(stream);
     if (stream->_cnt == 0) {
-        filbuf(stream);
+        _flsbuf('\0', stream);
+        _filbuf(stream);
     }
     stream->_cnt--;
     return (int) *(stream->_ptr++);
@@ -340,9 +377,9 @@ int fgetc(FILE *stream) {
 
 char *fgets(char *s, int size, FILE *stream) {
     if (size < 0) {
-        fputs("size cannot be less than zero, die.\n", stderr);
+        snprintf(errmsg, 500, "size cannot be less than zero, die.\n");
+        write(2, errmsg, strlen(errmsg));
         return NULL;
-        exit(-1);
     }
     char character;
     int index = 0;
@@ -358,7 +395,7 @@ char *fgets(char *s, int size, FILE *stream) {
 }
 
 char *gets(char *s) {
-    return fgets(s, 0, stdin);
+    s = fgets(s, 0, stdin);
 }
 
 int fclose(FILE *fp) {
@@ -370,37 +407,13 @@ int fclose(FILE *fp) {
 }
 
 int fflush(FILE *stream) {
-    if (stream == NULL) {
-        for (int i = 0; &_IOB[i] != NULL; i++) {
-            if (stream->_flag & _IOWRT || stream->_flag & _IORW) {
-                if (write((&_IOB[i])->_file, (&_IOB[i])->_base, (&_IOB[i])->_bufsiz) == -1) {
-                    return -1;
-                }
-            }
-
-            (&_IOB[i])->_ptr = NULL;
-            (&_IOB[i])->_base = NULL;
-            _filbuf(&_IOB[i]);
-        }
-    } else {
-        if (stream->_flag & _IOWRT || stream->_flag & _IORW) {
-            if (write(stream->_file, stream->_base, stream->_bufsiz) == -1) {
-                return -1;
-            }
-        }
-
-        stream->_ptr = NULL;
-        stream->_base = NULL;
-        _filbuf(stream);
-
-        return 0;
-    }
+    _flsbuf('\0', stream);
 }
 
 FILE * fdopen(int fd, const char *mode) {
     if (&_IOB[fd] != NULL) {
         FILE* f = &_IOB[fd];
-        _filbuf(f);
+        _allocate(f);
         //tracer(f);
         return f; //fopen(f, mode); //voir si sa plante ...
     } else {
@@ -409,7 +422,7 @@ FILE * fdopen(int fd, const char *mode) {
         f->_file = strlen(_IOB);
         f->_flag |= _IOMYBUF;
 
-        _filbuf(f);
+        _allocate(f);
         //tracer(f);
         return f;
     }
@@ -472,7 +485,7 @@ FILE * popen(const char *command, const char *type) {
 int pclose(FILE * stream) {
     int fd;
     fd = stream->_file;
-    sleep(2);       //Wait for the process ending.
+    sleep(2); //Wait for the process ending.
     if (close(fd) == -1) {
         return -1;
     } else {
@@ -486,7 +499,7 @@ FILE * tmpfile(void) {
     f->_base = malloc(sizeof (char)*BUFSIZ);
     f->_flag |= _IOMYBUF;
     f->_file = strlen(_IOB);
-    filbuf(f);
+    _allocate(f);
     //_IOB[strlen(_IOB)]=f;
     return f;
 }
