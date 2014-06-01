@@ -11,6 +11,7 @@
 #define NUMBER_OF_FILE 5000
 struct _iobuf _IOB[NUMBER_OF_FILE];
 char errmsg[500];
+char *tmp_file[NUMBER_OF_FILE];
 void _allocate(FILE *);
 void init();
 
@@ -19,23 +20,25 @@ void init();
 
 static void on_exit() {
 
-    for (int i = 0; i < NUMBER_OF_FILE; i++) {
+    for (int i = NUMBER_OF_FILE; i >= 0; i--) {
 
-        if (&_IOB[i] != NULL) {
-            fclose(&_IOB[i]);
-            if ((&_IOB[i])->_flag & _IOMYBUF) {
-                free((&_IOB[i])->_base);
-            }
-            (_IOB[i]._base) = NULL;
-            (_IOB[i]._ptr) = NULL;
+        if (fclose(&_IOB[i]) == -1) {
+            continue;
         }
+        if ((&_IOB[i])->_flag & _IOMYBUF) {
+            free((&_IOB[i])->_base);
+        }
+        (_IOB[i]._base) = NULL;
+        (_IOB[i]._ptr) = NULL;
     }
+
 }
 
 //Cette fonction doit etre appellé a chaque debut de programme, il y a certainement un moyen de l'inclure
 //automatique avec gcc, mais pour notre test d'implementation de stdio.h, il sera inclut manuellement dans le main
 
 void init() {
+
     FILE * f0 = malloc(sizeof (FILE));
     f0->_file = 0;
     f0->_flag = _IOMYBUF | _IOREAD | _IONBF;
@@ -75,7 +78,7 @@ int _flsbuf(unsigned char c, FILE* stream) {
             }
 
             for (int i = 0; i < (&_IOB[i])->_bufsiz; i++) {
-                (&_IOB[i])->_base[i] = c;
+                (&_IOB[i])->_base[i] = '\0';
             }
             (&_IOB[i])->_ptr = (&_IOB[i])->_base;
             (&_IOB[i])->_cnt = (&_IOB[i])->_bufsiz;
@@ -462,17 +465,25 @@ char *gets(char *s) {
 
 int fclose(FILE *fp) {
     fflush(fp);
-    tracer(fp);
+    int fd = fp->_file;
+    if (tmp_file[fd] != NULL) {
+        if (unlink(tmp_file[fd]) == -1) {
+            perror("stdio");
+        }
+        free(tmp_file[fd]);
+    }
     if (close(fp->_file) == -1) {
-        perror("stdio:");
         return -1;
     }
+
+
 
     return 0;
 
 }
 
 int fflush(FILE *stream) {
+
     return _flsbuf('\0', stream);
 }
 
@@ -491,6 +502,7 @@ FILE * fdopen(int fd, const char *mode) {
         (&f)->_flag |= _IOMYBUF;
 
         _allocate(&f);
+
         return &f;
     }
 
@@ -499,6 +511,7 @@ FILE * fdopen(int fd, const char *mode) {
 FILE * freopen(const char *path, const char *mode, FILE * stream) {
     FILE* ret = fopen(path, mode);
     ret->_file = stream->_file;
+
     return ret;
 }
 
@@ -542,6 +555,7 @@ FILE * popen(const char *command, const char *type) {
         exit(1);
     }
     if (close(p[end_child]) == -1) {
+
         exit(1);
     }
     execl("/bin/sh", "sh", "-c", command, NULL);
@@ -556,6 +570,7 @@ int pclose(FILE * stream) {
     if (close(fd) == -1) {
         return -1;
     } else {
+
         return 1;
     }
 
@@ -566,11 +581,20 @@ int pclose(FILE * stream) {
 
 FILE * tmpfile(void) {
     FILE * random = fopen("/dev/urandom", "r");
-    char uuid[16];
-    fgets(uuid, 16, random);
+    char * uuid = malloc(sizeof (char) * 16);
+    uuid[15] = '\0';
+    int indexUuid = 0;
+    char character;
+
+    for (character = fgetc(random); indexUuid < 15; character = fgetc(random)) {
+        if (((int) character > 64 && (int) character < 91) || ((int) character > 96 && (int) character < 124)) {
+            uuid[indexUuid] = character;
+            indexUuid++;
+        }
+    }
     fclose(random);
     FILE * randomFile = fopen(uuid, "w+");
-    unlink(uuid);
+    tmp_file[(int) randomFile->_file] = uuid;
     return randomFile;
 }
 

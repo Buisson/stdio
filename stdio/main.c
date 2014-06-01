@@ -111,7 +111,7 @@ void copy(char *s, char *d) {
 int main(int argc, char** argv) {
     init();
 
-    //tmpfile(); // le fichier tmp n'est pas toujours detruit a la fin du programme
+    tmpfile(); // le fichier tmp n'est pas toujours detruit a la fin du programme
 
     printf("debut %s %s %s\n", "de lecture", "et ecriture", "de lignes\n");
 
@@ -134,19 +134,19 @@ int main(int argc, char** argv) {
         write(2, "null\n", strlen("null\n"));
     }
     pclose(fp);
+    /*
+        char *dest;
 
-    char *dest;
+        ///* Vérifier qu'il y assez d'arguments
+        if (argc <= 2) usage();
 
-    ///* Vérifier qu'il y assez d'arguments
-    if (argc <= 2) usage();
+        ///* Si plus de deux arguments vérifier que le dernier est un répertoire
+        dest = argv[--argc];
+        if (argc > 2 && !is_dir(dest)) usage();
 
-    ///* Si plus de deux arguments vérifier que le dernier est un répertoire
-    dest = argv[--argc];
-    if (argc > 2 && !is_dir(dest)) usage();
-
-    ///* C'est bon, on peut  copier
-    while (--argc)
-        copy(*++argv, dest);
-
+        ///* C'est bon, on peut  copier
+        while (--argc)
+            copy(*++argv, dest);
+     */
     return 0;
 }
