@@ -38,7 +38,7 @@ int is_dir(char *f) {
 }
 
 void usage(void) {
-    printf("Il faut 2 parametres pour le cp\n");
+    printf("Il faut 2 parametres pour le cp\n\n");
     fflush(stdout);
     exit(1);
 }
@@ -134,19 +134,19 @@ int main(int argc, char** argv) {
         write(2, "null\n", strlen("null\n"));
     }
     pclose(fp);
-    /*
-        char *dest;
 
-        ///* Vérifier qu'il y assez d'arguments
-        if (argc <= 2) usage();
+    char *dest;
 
-        ///* Si plus de deux arguments vérifier que le dernier est un répertoire
-        dest = argv[--argc];
-        if (argc > 2 && !is_dir(dest)) usage();
+    ///* Vérifier qu'il y assez d'arguments
+    if (argc <= 2) usage();
 
-        ///* C'est bon, on peut  copier
-        while (--argc)
-            copy(*++argv, dest);
-     */
+    ///* Si plus de deux arguments vérifier que le dernier est un répertoire
+    dest = argv[--argc];
+    if (argc > 2 && !is_dir(dest)) usage();
+
+    ///* C'est bon, on peut  copier
+    while (--argc)
+        copy(*++argv, dest);
+
     return 0;
 }

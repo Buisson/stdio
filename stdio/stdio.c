@@ -476,8 +476,6 @@ int fclose(FILE *fp) {
         return -1;
     }
 
-
-
     return 0;
 
 }
@@ -575,9 +573,6 @@ int pclose(FILE * stream) {
     }
 
 }
-
-//Ne fonctionne pas, le fichier est correctement cree et ouvert, mais n'est pas supprimer lors
-//de la fermeture du programme, pour une raison que j'ignore
 
 FILE * tmpfile(void) {
     FILE * random = fopen("/dev/urandom", "r");
