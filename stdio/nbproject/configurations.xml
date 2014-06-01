@@ -13,7 +13,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>cat.c</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>stdio.c</itemPath>
     </logicalFolder>
@@ -61,8 +60,6 @@
       </compileType>
       <item path="../stdio.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="cat.c" ex="false" tool="0" flavor2="0">
-      </item>
       <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="stdio.c" ex="false" tool="0" flavor2="0">
@@ -89,8 +86,6 @@
         </asmTool>
       </compileType>
       <item path="../stdio.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="cat.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>

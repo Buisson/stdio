@@ -38,7 +38,8 @@ int is_dir(char *f) {
 }
 
 void usage(void) {
-    //  fprintf(stderr, "Usage: cp f1 f2; or: cp  f1 ... fn d\n");
+    printf("Il faut 2 parametres pour le cp\n");
+    fflush(stdout);
     exit(1);
 }
 
@@ -107,11 +108,32 @@ void copy(char *s, char *d) {
     copy_file(s, d);
 }
 
-/*
- *
- 
 int main(int argc, char** argv) {
     init();
+
+    //tmpfile(); // le fichier tmp n'est pas toujours detruit a la fin du programme
+
+    printf("debut %s %s %s\n", "de lecture", "et ecriture", "de lignes\n");
+
+    char buf[BUFSIZ];
+
+    gets(buf);
+    puts(buf);
+
+    putc('a', stdout);
+    putc('b', stdout);
+    putc('c', stdout);
+    putc('d', stdout);
+    putc('\n', stdout);
+
+    printf("affichage %s %s\n", "de", "ls");
+
+    FILE* fp;
+    fp = popen("ls", "w");
+    if (fp == NULL) {
+        write(2, "null\n", strlen("null\n"));
+    }
+    pclose(fp);
 
     char *dest;
 
@@ -126,13 +148,5 @@ int main(int argc, char** argv) {
     while (--argc)
         copy(*++argv, dest);
 
-    char buf[BUFSIZ];
-    FILE* fp;
-    fp = popen("ls", "w");
-    if (fp == NULL) {
-        write(2, "null\n", strlen("null\n"));
-    }
-    pclose(fp);
     return 0;
 }
- */

@@ -8,23 +8,59 @@
 #include <fcntl.h>
 #include <string.h>
 
-struct _iobuf _IOB[5000];
+#define NUMBER_OF_FILE 5000
+struct _iobuf _IOB[NUMBER_OF_FILE];
 char errmsg[500];
 void _allocate(FILE *);
+void init();
+
+//Cette fonction est appellé lors de la fermeture du programme, ferme tous les files descriptor et free la memoire
+//(particulierement utile pour l'implementation de la fonction tmpfile )
+
+static void on_exit() {
+
+    for (int i = 0; i < NUMBER_OF_FILE; i++) {
+
+        if (&_IOB[i] != NULL) {
+            fclose(&_IOB[i]);
+            if ((&_IOB[i])->_flag & _IOMYBUF) {
+                free((&_IOB[i])->_base);
+            }
+            (_IOB[i]._base) = NULL;
+            (_IOB[i]._ptr) = NULL;
+        }
+    }
+}
+
+//Cette fonction doit etre appellé a chaque debut de programme, il y a certainement un moyen de l'inclure
+//automatique avec gcc, mais pour notre test d'implementation de stdio.h, il sera inclut manuellement dans le main
 
 void init() {
-    (&_IOB[0])->_file = 0;
-    (&_IOB[0])->_flag = _IOMYBUF | _IOREAD | _IONBF;
-    _allocate(&(_IOB[0]));
+    FILE * f0 = malloc(sizeof (FILE));
+    f0->_file = 0;
+    f0->_flag = _IOMYBUF | _IOREAD | _IONBF;
+    _allocate(f0);
+    _IOB[0] = *f0;
 
-    (&_IOB[1])->_file = 1;
-    (&_IOB[1])->_flag = _IOMYBUF | _IOWRT | _IOLBF;
-    _allocate(&(_IOB[1]));
+    FILE * f1 = malloc(sizeof (FILE));
+    f1->_file = 1;
+    f1->_flag = _IOMYBUF | _IOWRT | _IOLBF;
+    _allocate(f1);
+    _IOB[1] = *f1;
 
-    (&_IOB[2])->_file = 2;
-    (&_IOB[2])->_flag = _IOMYBUF | _IOWRT | _IONBF;
-    _allocate(&(_IOB[2]));
+    FILE * f2 = malloc(sizeof (FILE));
+    f2->_file = 2;
+    f2->_flag = _IOMYBUF | _IOWRT | _IONBF;
+    _allocate(f2);
+    _IOB[2] = *f2;
+
+    if (atexit(on_exit)) {
+        fprintf(stderr, "Failed to register the call back\n");
+
+    }
 }
+
+//Vide le buffer dans le fichier
 
 int _flsbuf(unsigned char c, FILE* stream) {
 
@@ -61,9 +97,9 @@ int _flsbuf(unsigned char c, FILE* stream) {
         stream->_cnt = stream->_bufsiz;
         return 0;
     }
-
-
 }
+
+//Malloc de _base pour preparer le buffer a etre rempli
 
 void _allocate(FILE * f) {
 
@@ -75,6 +111,7 @@ void _allocate(FILE * f) {
 
     //todo faire les controles.verif si il y a un buffer.si pas buffer allouer un buffer.verif si le fichier est ouvert en lecture.(ne pas faire pour le moment)
     if (!f->_base) {
+
         f->_bufsiz = BUFSIZ;
         f->_base = malloc(sizeof (char)*f->_bufsiz);
         f->_ptr = f->_base;
@@ -83,8 +120,11 @@ void _allocate(FILE * f) {
     }
 }
 
+//notre fopen ne prend pas en charge le mode 'b' pour binaire, etant donnée que ce parametre
+//n'est de toute maniere pas pris en compte sous linux, et n'est meme pas posix. (cf: man fopen)
+
 FILE *fopen(const char *path, const char *mode) {
-    FILE* f;
+    FILE * f = malloc(sizeof (FILE));
     int flag;
 
     if (!strcmp(mode, "r")) {
@@ -112,7 +152,7 @@ FILE *fopen(const char *path, const char *mode) {
         write(2, errmsg, strlen(errmsg));
     }
 
-    if ((f->_file = open(path, flag)) == -1) {
+    if ((f->_file = open(path, flag, 0666)) == -1) {
         snprintf(errmsg, 500, "Open fail, die.\n");
         write(2, errmsg, strlen(errmsg));
         f->_flag |= _IOERR;
@@ -121,6 +161,7 @@ FILE *fopen(const char *path, const char *mode) {
 
     _allocate(f);
     if (!(f->_flag & _IOERR)) {
+        _IOB[(int) f->_file] = *f;
         return f;
     } else {
         return NULL;
@@ -137,6 +178,9 @@ int setvbuf(FILE *stream, char *buf, int mode, int size) {
     }
     stream->_ptr = buf;
     stream->_base = buf;
+    stream->_flag &= ~_IOFBF;
+    stream->_flag &= ~_IOLBF;
+    stream->_flag &= ~_IONBF;
     stream->_flag |= mode;
     stream->_bufsiz = size;
     return 0;
@@ -158,6 +202,7 @@ int printf(const char *format, ...) {
 }
 
 
+//compte le nombre d'occurrence de "%[[:alpha:]]", utile pour l'implementation de sprintf, fprintf,printf
 int count_arg(const char *str);
 
 int count_arg(const char *str) {
@@ -197,6 +242,12 @@ int count_arg(const char *str) {
     return numberMatch;
 }
 
+/*
+ Je voulais passer les parametres "..." aux autres fonctions, mais toute les recherches que j'ai
+ * fait m'ont amené à soit "c'est impossible", soit "il faut activer une extension gcc pour c++ pour le faire"
+ * donc vu que je ne savais pas comment faire, les fonctions nommé du type ".+\d" contiennent le code copier coller de mes autres fonctions
+ */
+
 int fprintf2(FILE *stream, const char *format, char* arguments[]) {
     int sizeOfString = strlen(format);
     char* argument;
@@ -205,7 +256,6 @@ int fprintf2(FILE *stream, const char *format, char* arguments[]) {
     }
     char str[(strlen(format) + sizeOfString)];
     sprintf2(str, format, arguments);
-    //write(2, str, strlen(str));
     return fputs(str, stream);
 }
 
@@ -227,6 +277,9 @@ int fprintf(FILE *stream, const char *format, ...) {
     // write(2, str, strlen(str));
     return fputs(str, stream);
 }
+
+//Dans l'etat actuel, sprintf fonctionne uniquement si ses parametres sont des char * (%s), pas d'autres
+//type disponible actuellement
 
 int sprintf(char *str, const char *format, ...) {
     va_list ap;
@@ -319,14 +372,14 @@ int sprintf2(char *str, const char *format, char * arguments[]) {
 
 int fputc(int c, FILE *stream) {
     if (&(stream->_file) == NULL) {
-        write(2, "file descriptor is closed, die.\n", strlen("file descriptor is closed, die.\n"));
+        snprintf(errmsg, 500, "file descriptor is closed, die.\n");
+        write(2, errmsg, strlen(errmsg));
         exit(-1);
     }
-    //tracer(stream);
 
     if (stream->_flag & _IOREAD) {
-
-        write(2, "cannot write on read-only file, die.\n", strlen("cannot write on read-only file, die.\n"));
+        snprintf(errmsg, 500, "cannot write on read-only file, die.\n");
+        write(2, errmsg, strlen(errmsg));
         exit(-1);
     }
     if (stream->_cnt == 0) {
@@ -343,8 +396,10 @@ int fputc(int c, FILE *stream) {
 
 int fputs(const char *s, FILE *stream) {
     for (int i = 0; i < strlen(s); i++) {
+
         fputc(s[i], stream);
     }
+
     return strlen(s);
 
 }
@@ -354,6 +409,9 @@ int puts(const char *s) {
 }
 
 int _filbuf(FILE *stream) {
+    if (ferror(stream)) {
+        return -1;
+    }
     stream->_cnt = read(stream->_file, stream->_base, BUFSIZ);
     stream->_ptr = stream->_base;
     if (stream->_cnt == -1) {
@@ -366,10 +424,11 @@ int _filbuf(FILE *stream) {
 }
 
 int fgetc(FILE *stream) {
-    //tracer(stream);
     if (stream->_cnt == 0) {
         _flsbuf('\0', stream);
-        _filbuf(stream);
+        if (_filbuf(stream) == -1) {
+            return -1;
+        }
     }
     stream->_cnt--;
     return (int) *(stream->_ptr++);
@@ -385,6 +444,9 @@ char *fgets(char *s, int size, FILE *stream) {
     int index = 0;
     do {
         character = (unsigned char) fgetc(stream);
+        if (character == -1) {
+            return NULL;
+        }
         if (character != EOF) {
             s[index] = character;
             index++;
@@ -395,36 +457,41 @@ char *fgets(char *s, int size, FILE *stream) {
 }
 
 char *gets(char *s) {
-    s = fgets(s, 0, stdin);
+    return fgets(s, 0, stdin);
 }
 
 int fclose(FILE *fp) {
     fflush(fp);
-    if (fp->_flag & _IOMYBUF) {
-        free(fp->_base);
+    tracer(fp);
+    if (close(fp->_file) == -1) {
+        perror("stdio:");
+        return -1;
     }
-    return close(fp->_file);
+
+    return 0;
+
 }
 
 int fflush(FILE *stream) {
-    _flsbuf('\0', stream);
+    return _flsbuf('\0', stream);
 }
 
 FILE * fdopen(int fd, const char *mode) {
     if (&_IOB[fd] != NULL) {
         FILE* f = &_IOB[fd];
+        f->_file = fd;
         _allocate(f);
-        //tracer(f);
         return f; //fopen(f, mode); //voir si sa plante ...
     } else {
-        FILE* f;
-        f->_base = malloc(sizeof (char)*BUFSIZ);
-        f->_file = strlen(_IOB);
-        f->_flag |= _IOMYBUF;
 
-        _allocate(f);
-        //tracer(f);
-        return f;
+        FILE f;
+        (&f)->_base = malloc(sizeof (char)*BUFSIZ);
+        (&f)->_ptr = (&f)->_base;
+        (&f)->_file = fd;
+        (&f)->_flag |= _IOMYBUF;
+
+        _allocate(&f);
+        return &f;
     }
 
 }
@@ -494,14 +561,17 @@ int pclose(FILE * stream) {
 
 }
 
+//Ne fonctionne pas, le fichier est correctement cree et ouvert, mais n'est pas supprimer lors
+//de la fermeture du programme, pour une raison que j'ignore
+
 FILE * tmpfile(void) {
-    FILE* f;
-    f->_base = malloc(sizeof (char)*BUFSIZ);
-    f->_flag |= _IOMYBUF;
-    f->_file = strlen(_IOB);
-    _allocate(f);
-    //_IOB[strlen(_IOB)]=f;
-    return f;
+    FILE * random = fopen("/dev/urandom", "r");
+    char uuid[16];
+    fgets(uuid, 16, random);
+    fclose(random);
+    FILE * randomFile = fopen(uuid, "w+");
+    unlink(uuid);
+    return randomFile;
 }
 
 
